@@ -20,6 +20,15 @@ for(const name of ['sample.ARW','sample.heic']){
    let min=255,max=0;for(let i=0;i<pixels.length;i+=4){min=Math.min(min,pixels[i]);max=Math.max(max,pixels[i]);}return max-min;
   });
   expect(range).toBeGreaterThan(10);expect(workers.length).toBeGreaterThan(0);
+  if(name==='sample.ARW'){
+   await page.getByRole('slider',{name:'Exposure (EV)'}).fill('1');
+   await page.getByRole('slider',{name:'Exposure (EV)'}).blur();
+   await page.getByRole('button',{name:'Export',exact:true}).click();
+   await page.getByRole('combobox',{name:'Export size',exact:true}).selectOption('1024');
+   const pending=page.waitForEvent('download',{timeout:60000});await page.getByRole('button',{name:'Download image'}).click();
+   const exported=await pending;await page.locator('input[type=file]').first().setInputFiles((await exported.path())!);
+   await expect(page.locator('.image-footer')).toContainText('1024');await expect(page.getByRole('alert')).toHaveCount(0);
+  }
   console.log(JSON.stringify({fixture:name,elapsedMs:Date.now()-started,preview:dimensions,redChannelRange:range,workers:workers.length}));
  });
 }

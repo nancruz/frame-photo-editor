@@ -43,3 +43,23 @@ test('repeated 45 MP PNG export completes from the original',async({page})=>{
   expect(bytes.readUInt32BE(16)).toBe(7500);expect(bytes.readUInt32BE(20)).toBe(6000);await expect(page.getByRole('alert')).toHaveCount(0);
  }
 });
+
+
+test('linear exposure matches reference patches in preview and PNG export',async({page})=>{
+ const patches=[[0,0,0],[32,32,32],[118,118,118],[190,140,110],[235,235,235],[255,255,255]];
+ await page.goto('/');const data=await page.evaluate(patches=>{
+  const c=document.createElement('canvas');c.width=192;c.height=32;const ctx=c.getContext('2d')!;
+  patches.forEach((rgb,i)=>{ctx.fillStyle=`rgb(${rgb.join(',')})`;ctx.fillRect(i*32,0,32,32);});return c.toDataURL().split(',')[1];
+ },patches);
+ await page.locator('input[type=file]').first().setInputFiles({name:'color-patches.png',mimeType:'image/png',buffer:Buffer.from(data,'base64')});
+ await expect(page.locator('.image-footer')).toBeVisible();
+ const slider=page.getByRole('slider',{name:'Exposure (EV)'});await slider.fill('1');await slider.blur();
+ const expected=patches.map(rgb=>rgb.map(value=>{const s=value/255,l=s<=.04045?s/12.92:Math.pow((s+.055)/1.055,2.4),v=Math.min(1,2*l);return Math.round(255*(v<=.0031308?v*12.92:1.055*Math.pow(v,1/2.4)-.055));}));
+ const read=()=>page.locator('.image-stage canvas').evaluate((c:HTMLCanvasElement)=>Array.from({length:6},(_,i)=>Array.from(c.getContext('2d')!.getImageData(i*32+16,16,1,1).data).slice(0,3)));
+ const deviation=(actual:number[][])=>Math.max(...actual.flatMap((rgb,i)=>rgb.map((v,j)=>Math.abs(v-expected[i][j]))));
+ await expect.poll(async()=>deviation(await read())).toBeLessThanOrEqual(1);
+ await page.getByRole('button',{name:'Export',exact:true}).click();await page.getByRole('combobox',{name:'Export format',exact:true}).selectOption('image/png');
+ const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Download image'}).click();const file=await pending;
+ await page.locator('input[type=file]').first().setInputFiles((await file.path())!);await expect(slider).toHaveValue('0');
+ expect(deviation(await read())).toBeLessThanOrEqual(1);
+});

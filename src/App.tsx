@@ -30,7 +30,7 @@ export default function App(){
  async function openFile(file?:File){
   if(!file||operation.current)return;const job=new AbortController();operation.current=job;setError('');setBusy(true);setProgress('Inspecting photo');let decoded:PhotoSource|null=null,next:ImageBitmap|null=null;
   try{
-   const result=await decodePhoto(file,{signal:job.signal,onProgress:report});decoded=result.source;const linear=isLinear(decoded)?await linearPreview(decoded):undefined;next=linear?.bitmap??await previewBitmap(decoded);job.signal.throwIfAborted();
+   const result=await decodePhoto(file,{signal:job.signal,onProgress:report});decoded=result.source;const linear=isLinear(decoded)?await linearPreview(decoded,2048,job.signal):undefined;next=linear?.bitmap??await previewBitmap(decoded);job.signal.throwIfAborted();
    if(!renderer.current)throw new Error('Renderer is unavailable');renderer.current.load(next,linear?.pixels);renderer.current.render(freshRecipe());
    closeSource(source.current);preview.current?.close();source.current=decoded;preview.current=next;decoded=null;next=null;
    useEditor.getState().newPhoto();setPhoto({name:file.name,width:result.source.width,height:result.source.height});setReadyFile(null);setCompare(false);viewport.reset();
