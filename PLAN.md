@@ -1,6 +1,6 @@
 # PLAN.md — Implementation Plan
 
-Status: **Alpha foundation created; full MVP incomplete.** Update this document after every meaningful milestone. Never check a task off without a test or inspection result.
+Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Update this document after every meaningful milestone. Never check a task off without a test or inspection result.
 
 ## Phase 0 — Feasibility and camera matrix (next priority)
 - [ ] Collect redistribution-safe JPEG/PNG/WebP/HEIC/DNG/CR2/CR3/NEF/ARW/RAF fixtures, 12–45 MP, multiple camera models.
@@ -24,7 +24,7 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 - [x] Adopt and document linear-light working RGB space and white point. Linear sRGB/D65 for alpha; see docs/EDITING.md.
 - [ ] ICC parsing/conversion (e.g. LittleCMS WASM), orientation normalization, profile fixtures.
 - [ ] Float texture capability detection and fallback.
-- [ ] RAW development (black level, white balance, demosaic, camera matrix, initial tone).
+- [x] RAW development through LibRaw (black level, camera white balance, demosaic, camera matrix), retaining 16-bit linear sRGB with an sRGB display transform. Sony ARW edit/export/reimport passed; broader camera/color acceptance remains open.
 - [ ] Golden color tests: skin tones, grays, gradients, highlights, clipping.
 **Gate:** reproducible display/export transforms and agreed image-difference tolerances.
 
@@ -83,3 +83,10 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 - RAW and HEIC worker decoding are experimental; multi-camera and real-device validation remains open. Histogram and spatial effects are absent.
 - GPU context-loss recovery, camera orientation/profile fixtures and physical-device lifecycle still need validation. Undo coalescing and sub-8-bit RAW tile precision have unit coverage.
 
+
+## RAW precision verification (2026-10-13)
+- 29 unit tests, production build and 10 Chromium browser tests passed: https://github.com/nancruz/frame-photo-editor/actions/runs/38466113868 .
+- Added real Sony RAW exposure/export/reimport and reference-patch exposure checks (maximum one 8-bit code-value error in preview and PNG round-trip).
+- RAW preview preparation now honors cancellation between scanlines.
+- Patched Vitest to 4.1.11; local tests/build pass and npm audit reports zero vulnerabilities. This tooling change does not alter the production image pipeline.
+- Added docs/SUPPORT.md with tested evidence, alpha release notes and explicit unsupported/unvalidated combinations.

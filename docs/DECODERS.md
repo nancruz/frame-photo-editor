@@ -30,4 +30,4 @@ LibRaw 1.6.0 uses shared WASM memory (initial allocation 256 MiB). Vite dev/prev
 
 ## Verification to date
 
-11 unit tests and production build passed locally. The upstream HEIC sample decoded to 1280 × 854 RGBA in Node. Chromium CI successfully opened both the Sony ARW and HEIC sample; the initial malformed-RAW test rejected the file but exposed an error-message mismatch, since corrected. Full camera/device compatibility and color fidelity are still unverified.
+The RAW precision milestone passed 29 unit tests, a production build and 10 Chromium browser tests. The Sony ARW test develops 16-bit linear data, applies exposure, exports JPEG at a 1024-pixel long edge and reimports it. The upstream HEIC fixture imports in Chromium; malformed RAW rejection also passes. Full camera/device compatibility and color fidelity are still unverified. See SUPPORT.md and the CI run linked in EDITING.md.

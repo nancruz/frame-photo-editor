@@ -39,4 +39,6 @@ Physical iOS/Android accessibility, memory and performance validation remains op
 
 ## Current automated evidence
 
-The editing/export milestone passed 27 unit tests, build and 9 production Chromium tests, including seam pixels, crop/rotation dimensions, offline reopening and two consecutive 7500 × 6000 PNG exports. This establishes that synthetic 45 MP PNGs complete on a CI desktop runner; it does not establish phone memory behavior or absence of long-term leaks. The 16-bit RAW follow-up has additional precision tests and reruns this suite.
+The RAW precision milestone passed 29 unit tests, build and 10 production Chromium tests, including Sony ARW exposure/export/reimport, neutral tile seams, crop/rotation dimensions, offline reopening and two consecutive 7500 × 6000 PNG exports. Synthetic exposure reference patches cover black, grays, a skin-tone-like color, highlights and clipping; preview and PNG round-trip agree with the sRGB transfer reference within one 8-bit code value. This is a narrow mathematical test, not camera color calibration.
+
+CI evidence: https://github.com/nancruz/frame-photo-editor/actions/runs/38466113868 . These results establish desktop runner behavior, not phone memory behavior or absence of long-term leaks. The subsequent Vitest security update also passed all 29 local tests and the build, with zero npm audit findings.
