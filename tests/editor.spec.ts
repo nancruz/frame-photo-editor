@@ -6,6 +6,12 @@ async function photo(page:Page,width=128,height=64){
  await page.locator('input[type=file]').first().setInputFiles({name:'synthetic.png',mimeType:'image/png',buffer:Buffer.from(data,'base64')});await expect(page.locator('.image-footer')).toContainText('synthetic.png');
 }
 async function pixel(page:Page){return page.locator('.image-stage canvas').evaluate((c:HTMLCanvasElement)=>Array.from(c.getContext('2d')!.getImageData(10,10,1,1).data));}
+async function orientedJpeg(page:Page){
+ const base64=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=60;c.height=30;const x=c.getContext('2d')!;x.fillStyle='#f00000';x.fillRect(0,0,30,30);x.fillStyle='#0000f0';x.fillRect(30,0,30,30);return c.toDataURL('image/jpeg',1).split(',')[1];});
+ const jpeg=Buffer.from(base64,'base64'),tiff=Buffer.alloc(26);tiff.write('II',0);tiff.writeUInt16LE(42,2);tiff.writeUInt32LE(8,4);tiff.writeUInt16LE(1,8);tiff.writeUInt16LE(274,10);tiff.writeUInt16LE(3,12);tiff.writeUInt32LE(1,14);tiff.writeUInt16LE(6,18);
+ const exif=Buffer.concat([Buffer.from('Exif\0\0','binary'),tiff]),segment=Buffer.alloc(4);segment.writeUInt16BE(0xffe1,0);segment.writeUInt16BE(exif.length+2,2);
+ return Buffer.concat([jpeg.subarray(0,2),segment,exif,jpeg.subarray(2)]);
+}
 test('neutral rendering, grouped history, HSL, curve and geometry controls',async({page})=>{
  await photo(page);expect(await pixel(page)).toEqual([128,64,32,255]);
  const exposure=page.getByRole('slider',{name:'Exposure (EV)'});await exposure.focus();await exposure.press('ArrowRight');await expect(exposure).toHaveValue('0.05');await page.getByRole('button',{name:'Undo',exact:true}).click();await expect(exposure).toHaveValue('0');
@@ -27,6 +33,14 @@ test('PNG tiled export has original dimensions and no neutral tile/strip seams',
 test('crop and quarter rotation export correct dimensions',async({page})=>{
  await photo(page);await page.getByRole('button',{name:'Crop',exact:true}).click();await page.getByRole('slider',{name:'Crop width (%)'}).fill('50');await page.getByRole('slider',{name:'Crop width (%)'}).blur();await page.getByRole('button',{name:'Rotate 90°'}).click();
  await page.getByRole('button',{name:'Export',exact:true}).click();await page.getByRole('combobox',{name:'Export format',exact:true}).selectOption('image/png');const pending=page.waitForEvent('download',{timeout:25000});await page.getByRole('button',{name:'Download image'}).click();const file=await pending;await page.locator('input[type=file]').first().setInputFiles((await file.path())!);await expect(page.locator('.image-footer')).toContainText('64 × 64');
+});
+test('normalizes EXIF orientation exactly once in preview and export',async({page})=>{
+ await page.goto('/');await page.locator('input[type=file]').first().setInputFiles({name:'oriented.jpg',mimeType:'image/jpeg',buffer:await orientedJpeg(page)});
+ await expect(page.locator('.image-footer')).toContainText('30 × 60');
+ const colors=await page.locator('.image-stage canvas').evaluate((c:HTMLCanvasElement)=>{const x=c.getContext('2d')!;return [Array.from(x.getImageData(15,8,1,1).data),Array.from(x.getImageData(15,52,1,1).data)];});
+ expect(colors[0][0]).toBeGreaterThan(200);expect(colors[0][2]).toBeLessThan(40);expect(colors[1][2]).toBeGreaterThan(200);expect(colors[1][0]).toBeLessThan(40);
+ await page.getByRole('button',{name:'Export',exact:true}).click();await page.getByRole('combobox',{name:'Export format',exact:true}).selectOption('image/png');const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Download image'}).click();const file=await pending;
+ await page.locator('input[type=file]').first().setInputFiles((await file.path())!);await expect(page.locator('.image-footer')).toContainText('30 × 60');
 });
 test('mobile tools collapse and image zoom works',async({page})=>{
  await page.setViewportSize({width:390,height:844});await photo(page);await page.getByRole('button',{name:'Zoom in'}).click();await expect(page.locator('.zoom-controls')).toContainText('125%');await page.getByRole('button',{name:'Fit',exact:true}).click();await page.getByRole('button',{name:/Adjustments/}).click();await expect(page.locator('.sidebar')).toHaveClass(/collapsed/);await page.screenshot({path:'test-results/editor-mobile.png'});
