@@ -31,8 +31,8 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 ## Phase 3 — Photographic editing
 - [ ] Exposure/contrast/highlights/shadows/whites/blacks with calibrated semantics.
 - [ ] Temperature/tint, vibrance/saturation, HSL and tone curve.
-- [ ] Crop/straighten/flip/rotate with normalized geometry.
-- [ ] Presets and history action batching, keyboard controls, before/after.
+- [x] Crop/straighten/flip/rotate with normalized geometry. Unit geometry tests and production-browser rotation/crop export tests pass.
+- [x] Presets and history action batching, keyboard controls, before/after. History tests and browser control inspection pass.
 - [ ] Add spatial effects only after artifact/halo and performance tests.
 **Gate:** all P0 controls visually tested and undoable.
 
@@ -44,7 +44,7 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 **Gate:** export dimensions, profile and visual parity validated on target devices.
 
 ## Phase 5 — Mobile UX and release
-- [ ] Mobile bottom-sheet editor; image-first space allocation.
+- [x] Mobile collapsible bottom editor; image-first space allocation. 390 × 844 screenshot inspected; real-device gate remains open.
 - [ ] Accurate touch sliders, pinch/zoom/pan and hold-to-compare.
 - [ ] PWA/offline caching, installed mode, share sheet where supported.
 - [ ] Accessibility, GPU context recovery, resilience, real-device regression.
@@ -74,8 +74,11 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 - Mobile collapsible tools, pinch/pan/zoom buttons, offline application shell and GPU recovery.
 - Automated geometry, transfer-function, recipe, history and PNG codec tests; production-browser editing/export/offline tests added. See docs/EDITING.md for exact semantics and limitations.
 
+- Verification: 27 unit tests and 9 Chromium browser tests passed, including two consecutive 45 MP PNG exports. Device, camera and visual calibration gates remain open.
+- Precision follow-up: LibRaw now outputs retained 16-bit linear sRGB; float32 texture upload keeps precision through adjustment and export.
+
 ## Known alpha technical debt
-- Current shader works from 8-bit browser textures; not an ICC-managed scene-linear pipeline.
+- Browser raster inputs remain 8-bit. RAW retains 16-bit linear sRGB and uploads float32 GPU tiles; a complete ICC-managed/wide-gamut pipeline remains open.
 - JPEG retains a full output canvas capped at 16 MP; PNG uses streaming strips up to 48 MP, pending device memory validation.
 - RAW and HEIC worker decoding are experimental; multi-camera and real-device validation remains open. Histogram and spatial effects are absent.
 - Need verify canvas lifecycle, WebGL context loss, undo coalescing, orientation and precision.

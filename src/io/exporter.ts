@@ -1,3 +1,4 @@
+import {isLinear,linearTile,type PhotoSource} from './source';
 import {WebGLRenderer} from '../engine/webgl';
 import type {EditRecipe} from '../domain/recipe';
 import {geometryTransform,geometryPlan} from '../domain/geometry';
@@ -9,7 +10,7 @@ export function exportSize(width:number,height:number,recipe:EditRecipe,maxEdge=
  return {width:Math.max(1,Math.round(p.width*scale)),height:Math.max(1,Math.round(p.height*scale))};
 }
 /** PNG output is streamed in strips; JPEG uses the browser encoder and retains a 16 MP canvas limit. */
-export async function exportPhoto(source:ImageBitmap,recipe:EditRecipe,settings:ExportSettings,options:OperationOptions={}):Promise<Blob>{
+export async function exportPhoto(source:PhotoSource,recipe:EditRecipe,settings:ExportSettings,options:OperationOptions={}):Promise<Blob>{
  checkCancelled(options.signal);const size=exportSize(source.width,source.height,recipe,settings.maxEdge),isPng=settings.type==='image/png';
  const maxPixels=isPng?48_000_000:16_000_000,maxEdge=isPng?32768:8192;
  if(size.width*size.height>maxPixels||Math.max(size.width,size.height)>maxEdge)throw new PhotoError('limit',`${isPng?'PNG supports up to 48 MP':'JPEG supports up to 16 MP'}; choose a smaller export size${isPng?'':' or PNG'}.`);
@@ -30,8 +31,8 @@ export async function exportPhoto(source:ImageBitmap,recipe:EditRecipe,settings:
    const maxX=Math.min(source.width,Math.max(...corners.map(p=>p.x))+2),maxY=Math.min(source.height,Math.max(...corners.map(p=>p.y))+2);
    for(let y=minY;y<maxY;y+=edge)for(let x=minX;x<maxX;x+=edge){
     checkCancelled(options.signal);const left=Math.max(0,x-2),top=Math.max(0,y-2),right=Math.min(source.width,x+edge+2),bottom=Math.min(source.height,y+edge+2);
-    const tile=await createImageBitmap(source,left,top,right-left,bottom-top);
-    try{renderer.load(tile);renderer.render(recipe);ctx.save();ctx.beginPath();ctx.rect(x,y,Math.min(edge,source.width-x),Math.min(edge,source.height-y));ctx.clip();ctx.drawImage(tileCanvas,left,top);ctx.restore();}finally{tile.close();}
+    const tile=isLinear(source)?null:await createImageBitmap(source,left,top,right-left,bottom-top);
+    try{if(isLinear(source))renderer.loadLinear(linearTile(source,left,top,right-left,bottom-top),right-left,bottom-top);else renderer.load(tile!);renderer.render(recipe);ctx.save();ctx.beginPath();ctx.rect(x,y,Math.min(edge,source.width-x),Math.min(edge,source.height-y));ctx.clip();ctx.drawImage(tileCanvas,left,top);ctx.restore();}finally{tile?.close();}
     await new Promise<void>(resolve=>setTimeout(resolve,0));
    }
    ctx.restore();if(encoder)await encoder.write(ctx.getImageData(0,0,size.width,height).data,height);

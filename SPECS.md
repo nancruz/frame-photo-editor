@@ -17,7 +17,7 @@ A privacy-first, non-destructive photographic editor for desktop and mobile brow
 - P0 editing controls, version 2 recipes, history grouping and geometry.
 - Streaming PNG up to 48 MP; browser JPEG up to 16 MP; output options and cancellation.
 - Mobile gestures, collapsible controls, keyboard access, offline app shell and optional file sharing.
-- **Limitations:** 8-bit developed input, incomplete ICC/scene-linear RAW engine, no spatial effects/histogram, no 45 MP JPEG or metadata preservation. Physical device/camera/color acceptance is still required. See PLAN.md and docs/EDITING.md.
+- **Limitations:** 8-bit raster input, incomplete ICC/wide-gamut RAW color management, no spatial effects/histogram, no 45 MP JPEG or metadata preservation. Physical device/camera/color acceptance is still required. See PLAN.md and docs/EDITING.md.
 
 ## Target MVP requirements (not all implemented)
 ### Input and validation

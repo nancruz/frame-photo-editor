@@ -1,8 +1,8 @@
 import LibRaw from 'libraw-wasm';
 import {checkCancelled,PhotoError,type OperationOptions} from './contracts';
-import {rgbaPixels} from './pixels';
+import type {LinearSource} from './source';
 const TIMEOUT=120_000;
-export async function decodeRaw(buffer:ArrayBuffer,options:OperationOptions):Promise<ImageBitmap>{
+export async function decodeRaw(buffer:ArrayBuffer,options:OperationOptions):Promise<LinearSource>{
  checkCancelled(options.signal);
  if(!globalThis.crossOriginIsolated)throw new PhotoError('decode','RAW decoding requires cross-origin isolation. Serve the app with its configured COOP/COEP headers.');
  const raw=new LibRaw();
@@ -10,14 +10,14 @@ export async function decodeRaw(buffer:ArrayBuffer,options:OperationOptions):Pro
  const timer=setTimeout(()=>{timedOut=true;raw.dispose();},TIMEOUT);
  const abort=()=>raw.dispose();options.signal?.addEventListener('abort',abort,{once:true});
  try{
-  await raw.open(new Uint8Array(buffer),{outputBps:8,outputColor:1,useCameraWb:true,useCameraMatrix:1,noAutoBright:true,gamm:[1/2.4,12.92],userFlip:-1});
+  await raw.open(new Uint8Array(buffer),{outputBps:16,outputColor:1,useCameraWb:true,useCameraMatrix:1,noAutoBright:true,gamm:[1,1],userFlip:-1});
   checkCancelled(options.signal);options.onProgress?.('decode',.35);
   const metadata=await raw.metadata();
   if(metadata && metadata.width*metadata.height>48_000_000)throw new PhotoError('limit','RAW image exceeds the 48 MP limit.');
   const pixels=await raw.imageData();checkCancelled(options.signal);
-  if(!pixels||pixels.bits!==8||!(pixels.data instanceof Uint8Array))throw new PhotoError('decode','RAW decoding failed: the file is damaged or returned an unsupported pixel layout.');
-  const rgba=rgbaPixels(pixels.width,pixels.height,pixels.colors,pixels.data);
-  return await createImageBitmap(new ImageData(rgba,pixels.width,pixels.height),{colorSpaceConversion:'none'});
+  if(!pixels||pixels.bits!==16||!(pixels.data instanceof Uint16Array))throw new PhotoError('decode','RAW decoding failed: the file is damaged or returned an unsupported pixel layout.');
+  if(![3,4].includes(pixels.colors)||pixels.width<1||pixels.height<1||pixels.width*pixels.height>48_000_000||pixels.data.length!==pixels.width*pixels.height*pixels.colors)throw new PhotoError('decode','RAW decoding failed: invalid dimensions or channels.');
+  return {kind:'linear16',width:pixels.width,height:pixels.height,colors:pixels.colors,data:pixels.data};
  }catch(error){
   checkCancelled(options.signal);
   if(error instanceof PhotoError)throw error;

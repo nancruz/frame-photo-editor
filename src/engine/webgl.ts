@@ -5,14 +5,14 @@ void main(){v_uv=vec2((a_position.x+1.0)*0.5,1.0-(a_position.y+1.0)*0.5);gl_Posi
 const FRAG = `#version 300 es
 precision highp float;
 in vec2 v_uv;uniform sampler2D u_image;
-uniform float u_exposure,u_contrast,u_saturation,u_warmth,u_brightness,u_highlights,u_shadows,u_whites,u_blacks,u_tint,u_vibrance;
+uniform float u_linearInput;uniform float u_exposure,u_contrast,u_saturation,u_warmth,u_brightness,u_highlights,u_shadows,u_whites,u_blacks,u_tint,u_vibrance;
 uniform vec3 u_hsl[8];uniform float u_curve[5];out vec4 outColor;
 vec3 toLinear(vec3 c){return mix(c/12.92,pow((c+0.055)/1.055,vec3(2.4)),step(vec3(0.04045),c));}
 vec3 toSRGB(vec3 c){return mix(c*12.92,1.055*pow(max(c,vec3(0.0)),vec3(1.0/2.4))-0.055,step(vec3(0.0031308),c));}
 vec3 rgbHsl(vec3 c){float hi=max(max(c.r,c.g),c.b),lo=min(min(c.r,c.g),c.b),d=hi-lo,l=(hi+lo)*.5,h=0.,s=0.;if(d>.000001){s=d/(1.-abs(2.*l-1.));if(hi==c.r)h=mod((c.g-c.b)/d,6.);else if(hi==c.g)h=(c.b-c.r)/d+2.;else h=(c.r-c.g)/d+4.;h=fract(h/6.+1.);}return vec3(h,s,l);}
 vec3 hslRgb(vec3 h){vec3 rgb=clamp(abs(mod(h.x*6.+vec3(0,4,2),6.)-3.)-1.,0.,1.);return h.z+(rgb-.5)*(1.-abs(2.*h.z-1.))*h.y;}
 float curve(float x){float p=clamp(x,0.,1.)*4.;int i=min(3,int(p));return mix(u_curve[i],u_curve[i+1],p-float(i));}
-void main(){vec4 px=texture(u_image,v_uv);vec3 rgb=toLinear(px.rgb);rgb*=exp2(u_exposure);
+void main(){vec4 px=texture(u_image,v_uv);vec3 rgb=u_linearInput>0.5?px.rgb:toLinear(px.rgb);rgb*=exp2(u_exposure);
 rgb+=vec3(u_brightness*.002);rgb=(rgb-.18)*(1.+u_contrast*.008)+.18;
 rgb+=vec3(u_warmth*.0012,-u_tint*.0008,-u_warmth*.0012);
 float y=max(0.,dot(rgb,vec3(.2126,.7152,.0722)));
@@ -39,6 +39,7 @@ export class WebGLRenderer{
  private buffer:WebGLBuffer|null=null;private vao:WebGLVertexArrayObject|null=null;
  get capabilities(){return {floatRenderable:!!this.gl.getExtension('EXT_color_buffer_float'),maxTextureSize:this.maxTextureSize};}
  get maxTextureSize():number{return this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE)}
+ private linearInput=false;
  private width=0;private height=0;
  constructor(public readonly canvas:HTMLCanvasElement){
   const gl=canvas.getContext('webgl2',{preserveDrawingBuffer:true,alpha:true,premultipliedAlpha:false});if(!gl)throw new Error('WebGL 2 unavailable on this device');
@@ -55,6 +56,7 @@ export class WebGLRenderer{
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
  }
  load(bitmap:ImageBitmap){
+  this.linearInput=false;
   const gl=this.gl;if(gl.isContextLost())throw new Error('GPU context lost. Reopen the photo after restoring the editor.');
   if(bitmap.width>this.maxTextureSize||bitmap.height>this.maxTextureSize)throw new Error('Image exceeds GPU texture limit');
   this.width=bitmap.width;this.height=bitmap.height;
@@ -63,9 +65,17 @@ export class WebGLRenderer{
   gl.bindTexture(gl.TEXTURE_2D,this.texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,0);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bitmap);
  }
+ loadLinear(data:Float32Array,width:number,height:number){
+  const gl=this.gl;if(gl.isContextLost())throw new Error('GPU context lost');
+  if(width>this.maxTextureSize||height>this.maxTextureSize)throw new Error('Linear tile exceeds GPU limit');
+  this.width=width;this.height=height;this.linearInput=true;this.canvas.width=width;this.canvas.height=height;gl.viewport(0,0,width,height);
+  gl.bindTexture(gl.TEXTURE_2D,this.texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,width,height,0,gl.RGBA,gl.FLOAT,data);
+  if(gl.getError()!==gl.NO_ERROR)throw new Error('This GPU cannot allocate the high-precision RAW texture.');
+ }
  render(recipe:EditRecipe){
   if(!this.width)return;
-  const gl=this.gl;gl.useProgram(this.program);
+  const gl=this.gl;gl.useProgram(this.program);gl.uniform1f(gl.getUniformLocation(this.program,'u_linearInput'),this.linearInput?1:0);
   for(const [key,value] of Object.entries(recipe)){
    if(typeof value!=='number'||key==='version')continue;
    const location=gl.getUniformLocation(this.program,`u_${key}`);

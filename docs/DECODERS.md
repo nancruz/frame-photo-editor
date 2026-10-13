@@ -2,7 +2,7 @@
 
 The browser attempts native JPEG/PNG/WebP/HEIC decoding first. On HEIC failure, a dedicated, disposable worker runs heic-decode 2.1.0 / libheif-js. Camera RAW signatures route to libraw-wasm 1.6.0, which runs LibRaw development in its own worker. No thumbnail extraction API is called.
 
-RAW development requests camera white balance, camera matrix, orientation from the camera, no automatic brightness, full size, sRGB primaries and an explicit gamma curve. Output is currently 8-bit display RGB for the alpha renderer. This does **not** implement the planned floating-point scene-linear editing pipeline. ICC handling for HEIC and accurate profile transforms remain unverified.
+RAW development requests camera white balance, camera matrix, orientation from the camera, no automatic brightness, full size, sRGB primaries and an explicit gamma curve. Output is 16-bit linear sRGB, retained through editing and uploaded in float32 GPU tiles. This improves RAW precision; a complete ICC/wide-gamut reference pipeline is still pending. ICC handling for HEIC and accurate profile transforms remain unverified.
 
 Worker lifetime is one decode. Abort, errors and successful completion release the worker. A 120-second deadline prevents indefinite waits; native browser decode cannot be interrupted mid-call. Inputs are limited to 150 MB and decoded images to 48 MP, but these checks do not bound the decoder's peak internal allocation. Large files remain experimental.
 

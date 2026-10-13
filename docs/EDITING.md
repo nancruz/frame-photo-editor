@@ -2,7 +2,7 @@
 
 ## Color and control semantics
 
-The alpha renderer uses linear-light sRGB primaries with D65 white for its point adjustments. Input/output use the IEC sRGB transfer function. A single fragment shader evaluates light adjustments at high precision, then converts to display sRGB for HSL and the tone curve. Intermediate operations are not stored in 8-bit framebuffers. Input precision remains 8-bit, including the current LibRaw development adapter; this is not the high-precision RAW engine promised by the final MVP.
+The alpha renderer uses linear-light sRGB primaries with D65 white for its point adjustments. Input/output use the IEC sRGB transfer function. A single fragment shader evaluates light adjustments at high precision, then converts to display sRGB for HSL and the tone curve. Intermediate operations are not stored in 8-bit framebuffers. JPEG/PNG/WebP/HEIC inputs remain browser-decoded 8-bit. LibRaw now develops to 16-bit linear sRGB (gamma 1), retained as Uint16Array. Preview and export tiles upload linear values into RGBA32F textures and bypass the input sRGB transfer function. Quantization to 8-bit occurs at final display/export, not before exposure edits. RAW preview samples the full linear source at bounded dimensions; improved antialiased linear resampling remains open.
 
 - Exposure: multiply linear RGB by 2^EV, -5 to +5 EV.
 - Contrast: linear slope around 18% gray, slope = 1 + 0.008 × setting.
@@ -14,7 +14,7 @@ The alpha renderer uses linear-light sRGB primaries with D65 white for its point
 - Curve: five monotonic, piecewise-linear points in display sRGB, applied equally to all channels.
 - Presets: creative settings only; keep current crop geometry.
 
-Color correctness is still a release gate: full ICC input conversion, floating-point RAW development, wide-gamut profiles and camera/color reference comparisons remain open. GPU float render-target capability is discoverable but no multi-pass floating-point graph is implemented. No Lightroom-equivalence claim is made.
+Color correctness is still a release gate: full ICC input conversion, wide-gamut profiles and camera/color reference comparisons remain open. Float RAW textures are sampled in a single shader pass; a multi-pass floating-point graph is not needed for these point effects. An unsupported texture allocation fails explicitly rather than silently reducing RAW precision. No Lightroom-equivalence claim is made.
 
 ## Geometry and history
 
@@ -36,3 +36,7 @@ Version 2 recipes contain controls, HSL, curve and geometry. Version 1 recipes m
 The generated service worker precaches application/decoder assets only. It never stores imported photos, recipes, exports or telemetry. Installation and sharing depend on browser support. Pinch zoom/pan and zoom buttons affect the viewing transform only. Mobile controls collapse to give the image more room. Sliders have labels, pointer capture and keyboard history batching; Ctrl/Cmd-Z, Shift-Ctrl/Cmd-Z and Ctrl/Cmd-Y control history. Hold-to-compare supports pointer, Space and Enter. Context restoration rebuilds GPU resources from the retained preview.
 
 Physical iOS/Android accessibility, memory and performance validation remains open; viewport emulation cannot establish those results.
+
+## Current automated evidence
+
+The editing/export milestone passed 27 unit tests, build and 9 production Chromium tests, including seam pixels, crop/rotation dimensions, offline reopening and two consecutive 7500 × 6000 PNG exports. This establishes that synthetic 45 MP PNGs complete on a CI desktop runner; it does not establish phone memory behavior or absence of long-term leaks. The 16-bit RAW follow-up has additional precision tests and reruns this suite.

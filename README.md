@@ -19,7 +19,7 @@ Validation: `npm test` and `npm run build`.
 - Mobile collapsible controls, pinch/pan/zoom, offline app shell and device sharing where available.
 
 ## Known limitations
-**This is an alpha, not the complete MVP.** Color processing still uses 8-bit developed input and lacks a complete ICC/scene-linear RAW pipeline. Camera, real-phone, large-image memory and visual accuracy gates remain open. JPEG exports above 16 MP and metadata preservation are not implemented. See [editing semantics](docs/EDITING.md) and [decoder status](docs/DECODERS.md).
+**This is an alpha, not the complete MVP.** Raster inputs remain 8-bit; RAW retains 16-bit linear data through float GPU editing. Full ICC/wide-gamut handling is pending. Camera, real-phone, large-image memory and visual accuracy gates remain open. JPEG exports above 16 MP and metadata preservation are not implemented. See [editing semantics](docs/EDITING.md) and [decoder status](docs/DECODERS.md).
 
 ## Project docs
 - [SPECS.md](SPECS.md) — authoritative functional and technical requirements

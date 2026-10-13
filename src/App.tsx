@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState} from 'react';
 import {Upload,Download,Undo2,Redo2,RotateCcw,ImagePlus,Eye,FileJson} from 'lucide-react';
+import {isLinear,linearPreview,closeSource,type PhotoSource} from './io/source';
 import {PreviewRenderer} from './engine/preview';
 import {decodePhoto,previewBitmap} from './io/decoder';
 import {exportPhoto,exportSize,type ExportSettings} from './io/exporter';
@@ -11,14 +12,14 @@ const ACCEPT='.jpg,.jpeg,.png,.webp,.heic,.heif,.dng,.cr2,.cr3,.nef,.arw,.raf';
 const message=(e:unknown)=>e instanceof Error?e.message:String(e);
 function download(blob:Blob,name:string){const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 export default function App(){
- const canvas=useRef<HTMLCanvasElement>(null),renderer=useRef<PreviewRenderer|null>(null),source=useRef<ImageBitmap|null>(null),preview=useRef<ImageBitmap|null>(null);
+ const canvas=useRef<HTMLCanvasElement>(null),renderer=useRef<PreviewRenderer|null>(null),source=useRef<PhotoSource|null>(null),preview=useRef<ImageBitmap|null>(null);
  const fileInput=useRef<HTMLInputElement>(null),recipeInput=useRef<HTMLInputElement>(null),operation=useRef<AbortController|null>(null),dialog=useRef<HTMLDialogElement>(null);
  const [photo,setPhoto]=useState<{name:string;width:number;height:number}|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[progress,setProgress]=useState(''),[compare,setCompare]=useState(false),[collapsed,setCollapsed]=useState(false);
  const [settings,setSettings]=useState<ExportSettings>({type:'image/jpeg',quality:.92,maxEdge:0}),[readyFile,setReadyFile]=useState<File|null>(null);
  const recipe=useEditor(s=>s.recipe),past=useEditor(s=>s.past),future=useEditor(s=>s.future),undo=useEditor(s=>s.undo),redo=useEditor(s=>s.redo),reset=useEditor(s=>s.reset),apply=useEditor(s=>s.apply);
  const viewport=useViewport();
  useEffect(()=>{if(canvas.current){try{renderer.current=new PreviewRenderer(canvas.current,setError);}catch(e){setError(message(e));}}
-  return()=>{operation.current?.abort();renderer.current?.dispose();renderer.current=null;source.current?.close();source.current=null;preview.current?.close();preview.current=null;};},[]);
+  return()=>{operation.current?.abort();renderer.current?.dispose();renderer.current=null;closeSource(source.current);source.current=null;preview.current?.close();preview.current=null;};},[]);
  useEffect(()=>{const frame=requestAnimationFrame(()=>{try{renderer.current?.render(compare?freshRecipe():recipe);}catch(e){setError(message(e));}});return()=>cancelAnimationFrame(frame);},[recipe,compare]);
  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{
   const target=e.target as HTMLElement;if(target.matches('input,select,textarea')||target.isContentEditable||dialog.current?.open)return;
@@ -27,13 +28,13 @@ export default function App(){
  };const release=()=>{setCompare(false);useEditor.getState().finishInteraction();};window.addEventListener('keydown',onKey);window.addEventListener('blur',release);return()=>{window.removeEventListener('keydown',onKey);window.removeEventListener('blur',release);};},[undo,redo]);
  const report=(stage:string,fraction:number)=>setProgress(`${stage}: ${Math.round(fraction*100)}%`);
  async function openFile(file?:File){
-  if(!file||operation.current)return;const job=new AbortController();operation.current=job;setError('');setBusy(true);setProgress('Inspecting photo');let decoded:ImageBitmap|null=null,next:ImageBitmap|null=null;
+  if(!file||operation.current)return;const job=new AbortController();operation.current=job;setError('');setBusy(true);setProgress('Inspecting photo');let decoded:PhotoSource|null=null,next:ImageBitmap|null=null;
   try{
-   const result=await decodePhoto(file,{signal:job.signal,onProgress:report});decoded=result.bitmap;next=await previewBitmap(decoded);job.signal.throwIfAborted();
-   if(!renderer.current)throw new Error('Renderer is unavailable');renderer.current.load(next);renderer.current.render(freshRecipe());
-   source.current?.close();preview.current?.close();source.current=decoded;preview.current=next;decoded=null;next=null;
-   useEditor.getState().newPhoto();setPhoto({name:file.name,width:result.bitmap.width,height:result.bitmap.height});setReadyFile(null);setCompare(false);viewport.reset();
-  }catch(e){if(!job.signal.aborted)setError(message(e));}finally{decoded?.close();next?.close();operation.current=null;setBusy(false);setProgress('');}
+   const result=await decodePhoto(file,{signal:job.signal,onProgress:report});decoded=result.source;const linear=isLinear(decoded)?await linearPreview(decoded):undefined;next=linear?.bitmap??await previewBitmap(decoded);job.signal.throwIfAborted();
+   if(!renderer.current)throw new Error('Renderer is unavailable');renderer.current.load(next,linear?.pixels);renderer.current.render(freshRecipe());
+   closeSource(source.current);preview.current?.close();source.current=decoded;preview.current=next;decoded=null;next=null;
+   useEditor.getState().newPhoto();setPhoto({name:file.name,width:result.source.width,height:result.source.height});setReadyFile(null);setCompare(false);viewport.reset();
+  }catch(e){if(!job.signal.aborted)setError(message(e));}finally{closeSource(decoded);next?.close();operation.current=null;setBusy(false);setProgress('');}
  }
  async function exportImage(){
   if(!source.current||!photo||operation.current)return;const job=new AbortController();operation.current=job;setError('');setBusy(true);setProgress('Rendering export');
