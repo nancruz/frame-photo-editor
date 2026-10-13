@@ -24,5 +24,5 @@ for(const name of ['sample.ARW','sample.heic']){
 test('rejects a malformed RAW file without hanging',async({page})=>{
  await page.goto('/');
  await page.locator('input[type=file]').first().setInputFiles({name:'broken.dng',mimeType:'application/octet-stream',buffer:Buffer.from([73,73,42,0,0,0,0,0])});
- await expect(page.getByRole('alert')).toContainText('RAW decoding failed',{timeout:120000});
+ await expect(page.getByRole('alert')).toContainText('RAW decoding failed',{timeout:20000});
 });

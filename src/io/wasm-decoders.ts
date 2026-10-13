@@ -15,7 +15,7 @@ export async function decodeRaw(buffer:ArrayBuffer,options:OperationOptions):Pro
   const metadata=await raw.metadata();
   if(metadata && metadata.width*metadata.height>48_000_000)throw new PhotoError('limit','RAW image exceeds the 48 MP limit.');
   const pixels=await raw.imageData();checkCancelled(options.signal);
-  if(!pixels||pixels.bits!==8||!(pixels.data instanceof Uint8Array))throw new PhotoError('decode','Unexpected RAW bit depth.');
+  if(!pixels||pixels.bits!==8||!(pixels.data instanceof Uint8Array))throw new PhotoError('decode','RAW decoding failed: the file is damaged or returned an unsupported pixel layout.');
   const rgba=rgbaPixels(pixels.width,pixels.height,pixels.colors,pixels.data);
   return await createImageBitmap(new ImageData(rgba,pixels.width,pixels.height),{colorSpaceConversion:'none'});
  }catch(error){

@@ -6,7 +6,7 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 - [ ] Collect redistribution-safe JPEG/PNG/WebP/HEIC/DNG/CR2/CR3/NEF/ARW/RAF fixtures, 12–45 MP, multiple camera models.
 - [ ] Detect file signatures, orientation, ICC and camera metadata; define supported/unsupported errors.
 - [ ] Test HEIC native browser decoding and a licensed WASM fallback on iOS, Android, desktop.
-- [ ] Prototype LibRaw WASM in worker; decode actual RAW pixels, not only embedded previews.
+- [x] Prototype LibRaw WASM in worker; decode actual RAW pixels, not only embedded previews. (Sony ARW production-browser import passed in Chromium CI; broader camera matrix remains open.)
 - [ ] Measure memory/latency across target phones and desktop; document per-camera failures.
 **Gate:** compatibility matrix and working HEIC + representative RAW samples on real devices.
 

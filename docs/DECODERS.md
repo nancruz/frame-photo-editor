@@ -27,3 +27,7 @@ Before a public release, retain all upstream license texts and corresponding sou
 ## Hosting requirement
 
 LibRaw 1.6.0 uses shared WASM memory (initial allocation 256 MiB). Vite dev/preview and Netlify are configured with `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. Other hosts must preserve these headers. RAW import fails immediately with a configuration message when cross-origin isolation is unavailable.
+
+## Verification to date
+
+11 unit tests and production build passed locally. The upstream HEIC sample decoded to 1280 × 854 RGBA in Node. Chromium CI successfully opened both the Sony ARW and HEIC sample; the initial malformed-RAW test rejected the file but exposed an error-message mismatch, since corrected. Full camera/device compatibility and color fidelity are still unverified.
