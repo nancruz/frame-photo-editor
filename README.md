@@ -12,15 +12,14 @@ npm run dev
 Validation: `npm test` and `npm run build`.
 
 ## Working in alpha
-- Signature-validated JPEG, PNG and WebP import via picker/drag/drop; native HEIC where the browser supports it.
-- Bounded 2048 px preview with the original decoded image retained for export.
-- Five WebGL adjustments: exposure, contrast, saturation, warmth, brightness.
-- Edit recipes (JSON), undo/redo, reset and hold-to-compare.
-- Original-pixel tiled GPU JPEG export up to the current 16 MP / 8192 px safety limit.
-- Responsive desktop/mobile interface.
+- JPEG/PNG/WebP plus experimental HEIC and LibRaw worker imports.
+- Light/color controls, HSL, tone curve, presets, crop/straighten/rotation/flips.
+- Versioned recipes, grouped undo/redo, before/after and keyboard shortcuts.
+- Full-source PNG strip export up to 48 MP; JPEG export up to 16 MP. Resize/quality options, progress and cancellation.
+- Mobile collapsible controls, pinch/pan/zoom, offline app shell and device sharing where available.
 
 ## Known limitations
-**This is an alpha technical prototype, not the full photo editing MVP.** RAW development and a local HEIC WASM fallback are implemented as experimental worker adapters. Camera and device compatibility remains unverified; see [decoder notes](docs/DECODERS.md). The pipeline operates on browser-decoded 8-bit textures and is not ICC-managed. Tiled GPU rendering still assembles into one browser canvas for encoding. Crop and professional tools are pending. Do not use for color-critical production photos.
+**This is an alpha, not the complete MVP.** Color processing still uses 8-bit developed input and lacks a complete ICC/scene-linear RAW pipeline. Camera, real-phone, large-image memory and visual accuracy gates remain open. JPEG exports above 16 MP and metadata preservation are not implemented. See [editing semantics](docs/EDITING.md) and [decoder status](docs/DECODERS.md).
 
 ## Project docs
 - [SPECS.md](SPECS.md) — authoritative functional and technical requirements

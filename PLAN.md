@@ -21,7 +21,7 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 **Gate:** green build/test and reliable JPEG edit/export in desktop and mobile browsers.
 
 ## Phase 2 — Color-managed high-precision engine
-- [ ] Adopt and document linear-light working RGB space and white point.
+- [x] Adopt and document linear-light working RGB space and white point. Linear sRGB/D65 for alpha; see docs/EDITING.md.
 - [ ] ICC parsing/conversion (e.g. LittleCMS WASM), orientation normalization, profile fixtures.
 - [ ] Float texture capability detection and fallback.
 - [ ] RAW development (black level, white balance, demosaic, camera matrix, initial tone).
@@ -37,7 +37,7 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 **Gate:** all P0 controls visually tested and undoable.
 
 ## Phase 4 — Full-resolution safe export
-- [ ] Separate preview sizing from export; no preview upsampling.
+- [x] Separate preview sizing from export; no preview upsampling. Export uses retained original and validated crop/size geometry.
 - [ ] Tiled GPU/worker processing with filter overlap, progress and cancellation.
 - [ ] JPEG+PNG output options, sRGB ICC, EXIF/metadata policy.
 - [ ] Repeated 45 MP exports without memory leaks or mobile crashes.
@@ -67,9 +67,16 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 
 - Decoder milestone: pinned LibRaw and HEIC WASM adapters; actual RAW development, abort/timeout cleanup, import progress and fresh history per photo. Added pixel-layout tests and production browser smoke harness. See docs/DECODERS.md. Local browser execution is blocked by container socket restrictions; CI carries the smoke tests.
 
+## Editor implementation milestone (2026-10-13)
+- Implemented all P0 control interfaces: light/color, eight-band HSL, monotonic curve, presets and normalized crop/straighten/rotation/flips. These remain experimental until color/visual acceptance gates pass.
+- Version 2 recipe migration and pointer/keyboard history batching; keyboard undo/redo and accessible compare.
+- PNG streaming strips with sRGB declaration and alpha, JPEG/PNG size/quality controls, progress/cancel, optional share. PNG code limit 48 MP; JPEG remains capped at 16 MP. Real-device repeated 45 MP acceptance remains open.
+- Mobile collapsible tools, pinch/pan/zoom buttons, offline application shell and GPU recovery.
+- Automated geometry, transfer-function, recipe, history and PNG codec tests; production-browser editing/export/offline tests added. See docs/EDITING.md for exact semantics and limitations.
+
 ## Known alpha technical debt
 - Current shader works from 8-bit browser textures; not an ICC-managed scene-linear pipeline.
-- Export uses GPU tiles but retains a full output canvas, capped at 16 MP.
-- RAW and HEIC worker decoding are experimental; multi-camera and real-device validation remains open. Mobile gestures, presets, histogram and crop are absent.
+- JPEG retains a full output canvas capped at 16 MP; PNG uses streaming strips up to 48 MP, pending device memory validation.
+- RAW and HEIC worker decoding are experimental; multi-camera and real-device validation remains open. Histogram and spatial effects are absent.
 - Need verify canvas lifecycle, WebGL context loss, undo coalescing, orientation and precision.
 

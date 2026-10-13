@@ -12,13 +12,12 @@ A privacy-first, non-destructive photographic editor for desktop and mobile brow
 - Image quality is a release requirement; visual fidelity outranks feature count.
 
 ## Current alpha implementation
-- React + TypeScript + Vite; Zustand state and an isolated WebGL 2 renderer.
-- Local JPEG, PNG and WebP picker/drag-and-drop.
-- Exposure, brightness, contrast, saturation, warmth; undo/redo/reset and hold-to-compare.
-- PNG canvas export and JSON recipe import/export.
-- Responsive basic UI, no server requests.
-- Experimental LibRaw development and HEIC WASM fallback in disposable workers; bounded preview and tiled GPU JPEG export (16 MP cap).
-- **Limitations:** 8-bit display RGB, full output canvas allocation, no ICC pipeline, crop or color-critical accuracy. RAW/HEIC camera compatibility and quality/performance are not validated on real devices.
+- React/TypeScript/Vite, Zustand, WebGL 2; private local-only editing.
+- Experimental LibRaw and HEIC WASM workers, bounded preview and retained source.
+- P0 editing controls, version 2 recipes, history grouping and geometry.
+- Streaming PNG up to 48 MP; browser JPEG up to 16 MP; output options and cancellation.
+- Mobile gestures, collapsible controls, keyboard access, offline app shell and optional file sharing.
+- **Limitations:** 8-bit developed input, incomplete ICC/scene-linear RAW engine, no spatial effects/histogram, no 45 MP JPEG or metadata preservation. Physical device/camera/color acceptance is still required. See PLAN.md and docs/EDITING.md.
 
 ## Target MVP requirements (not all implemented)
 ### Input and validation
