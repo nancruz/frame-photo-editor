@@ -1,13 +1,14 @@
 import {isLinear,closeSource,linearPreview,type PhotoSource} from './source';
 import {checkCancelled, PhotoError, type OperationOptions} from './contracts';
 import {inspectMetadata,type PhotoMetadata} from './metadata';
-import {detectFormat, type Format} from './inspect';
+import {detectFormat,inspectDimensions,type Format} from './inspect';
 export interface DecodedPhoto { source: PhotoSource; format: Format; name: string; metadata: PhotoMetadata }
 export async function decodePhoto(file: File, options: OperationOptions = {}): Promise<DecodedPhoto> {
  checkCancelled(options.signal); options.onProgress?.('inspect',0);
  if(file.size>150*1024*1024) throw new PhotoError('limit','File exceeds the 150 MB input safety limit.');
  const header=new Uint8Array(await file.slice(0,2*1024*1024).arrayBuffer());
- const format=detectFormat(header);const metadata=inspectMetadata(header);
+ const format=detectFormat(header),dimensions=inspectDimensions(header,format);const metadata=inspectMetadata(header);
+ if(dimensions&&dimensions.width*dimensions.height>48_000_000)throw new PhotoError('limit','Photo dimensions exceed the 48 MP safety limit.');
  checkCancelled(options.signal);
 
  options.onProgress?.('decode',0);

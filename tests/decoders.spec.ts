@@ -38,3 +38,8 @@ test('rejects a malformed RAW file without hanging',async({page})=>{
  await page.locator('input[type=file]').first().setInputFiles({name:'broken.dng',mimeType:'application/octet-stream',buffer:Buffer.from([73,73,42,0,0,0,0,0])});
  await expect(page.getByRole('alert')).toContainText('RAW decoding failed',{timeout:20000});
 });
+test('rejects oversized raster dimensions before native decode allocation',async({page})=>{
+ await page.goto('/');const header=Buffer.alloc(24);Buffer.from([137,80,78,71,13,10,26,10]).copy(header);header.writeUInt32BE(12000,16);header.writeUInt32BE(5000,20);
+ await page.locator('input[type=file]').first().setInputFiles({name:'oversized.png',mimeType:'image/png',buffer:header});
+ await expect(page.getByRole('alert')).toContainText('48 MP safety limit');
+});
