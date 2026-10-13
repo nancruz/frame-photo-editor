@@ -4,6 +4,7 @@ import {rgbaPixels} from './pixels';
 const TIMEOUT=120_000;
 export async function decodeRaw(buffer:ArrayBuffer,options:OperationOptions):Promise<ImageBitmap>{
  checkCancelled(options.signal);
+ if(!globalThis.crossOriginIsolated)throw new PhotoError('decode','RAW decoding requires cross-origin isolation. Serve the app with its configured COOP/COEP headers.');
  const raw=new LibRaw();
  let timedOut=false;
  const timer=setTimeout(()=>{timedOut=true;raw.dispose();},TIMEOUT);
