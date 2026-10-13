@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 import path from 'node:path';
+import {readFile} from 'node:fs/promises';
 const directory=process.env.FRAME_FIXTURES;
 for(const name of ['sample.ARW','sample.heic']){
  test(`develops actual ${name} pixels in the production build`,async({page})=>{
@@ -26,7 +27,7 @@ for(const name of ['sample.ARW','sample.heic']){
    await page.getByRole('button',{name:'Export',exact:true}).click();
    await page.getByRole('combobox',{name:'Export size',exact:true}).selectOption('1024');
    const pending=page.waitForEvent('download',{timeout:60000});await page.getByRole('button',{name:'Download image'}).click();
-   const exported=await pending;await page.locator('input[type=file]').first().setInputFiles((await exported.path())!);
+   const exported=await pending,exportedPath=(await exported.path())!;expect((await readFile(exportedPath)).indexOf(Buffer.from('ICC_PROFILE\0'))).toBeGreaterThan(0);await page.locator('input[type=file]').first().setInputFiles(exportedPath);
    await expect(page.locator('.image-footer')).toContainText('1024');await expect(page.getByRole('alert')).toHaveCount(0);
   }
   console.log(JSON.stringify({fixture:name,elapsedMs:Date.now()-started,preview:dimensions,redChannelRange:range,workers:workers.length}));

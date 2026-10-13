@@ -4,6 +4,7 @@ import type {EditRecipe} from '../domain/recipe';
 import {geometryTransform,geometryPlan} from '../domain/geometry';
 import {checkCancelled,PhotoError,type OperationOptions} from './contracts';
 import {createPngEncoder} from './png';
+import {declareJpegSrgb} from './jpeg';
 export interface ExportSettings {type:'image/png'|'image/jpeg';quality:number;maxEdge?:number}
 export function exportSize(width:number,height:number,recipe:EditRecipe,maxEdge=0){
  const p=geometryPlan(width,height,recipe.geometry);const scale=maxEdge>0?Math.min(1,maxEdge/Math.max(p.width,p.height)):1;
@@ -40,7 +41,7 @@ export async function exportPhoto(source:PhotoSource,recipe:EditRecipe,settings:
   }
   checkCancelled(options.signal);options.onProgress?.('encode',0);
   let blob:Blob;
-  if(encoder)blob=await encoder.finish();else blob=await new Promise<Blob>((resolve,reject)=>output.toBlob(b=>b?resolve(b):reject(new PhotoError('limit','Export allocation failed.')),settings.type,Math.min(1,Math.max(.1,settings.quality))));
+  if(encoder)blob=await encoder.finish();else {const encoded=await new Promise<Blob>((resolve,reject)=>output.toBlob(b=>b?resolve(b):reject(new PhotoError('limit','Export allocation failed.')),settings.type,Math.min(1,Math.max(.1,settings.quality))));blob=await declareJpegSrgb(encoded);}
   checkCancelled(options.signal);if(blob.type!==settings.type)throw new PhotoError('unsupported','Requested encoder is unavailable.');
   options.onProgress?.('encode',1);finished=true;return blob;
  }finally{if(!finished)await encoder?.abort();renderer?.dispose();tileCanvas.width=tileCanvas.height=0;output.width=output.height=0;}
