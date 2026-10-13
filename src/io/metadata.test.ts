@@ -6,3 +6,10 @@ it('detects JPEG ICC profile markers without retaining their payload',()=>{
  const label=new TextEncoder().encode('ICC_PROFILE\0');const data=new Uint8Array(2+4+label.length+2);data.set([255,216,255,226,0,label.length+2],0);data.set(label,6);data.set([255,217],6+label.length);
  expect(inspectMetadata(data)).toEqual({orientation:1,profile:'embedded'});
 });
+it('reads bounded TIFF camera make and model strings',()=>{
+ const data=new Uint8Array(56),view=new DataView(data.buffer);data.set([73,73,42,0,8,0,0,0]);view.setUint16(8,2,true);
+ view.setUint16(10,271,true);view.setUint16(12,2,true);view.setUint32(14,6,true);view.setUint32(18,38,true);
+ view.setUint16(22,272,true);view.setUint16(24,2,true);view.setUint32(26,8,true);view.setUint32(30,44,true);
+ data.set(new TextEncoder().encode('Sony\0\0'),38);data.set(new TextEncoder().encode('A7 Test\0'),44);
+ expect(inspectMetadata(data)).toMatchObject({make:'Sony',model:'A7 Test'});
+});

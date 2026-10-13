@@ -4,7 +4,7 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 
 ## Phase 0 — Feasibility and camera matrix (next priority)
 - [ ] Collect redistribution-safe JPEG/PNG/WebP/HEIC/DNG/CR2/CR3/NEF/ARW/RAF fixtures, 12–45 MP, multiple camera models.
-- [ ] Detect file signatures, orientation, ICC and camera metadata; define supported/unsupported errors.
+- [x] Detect file signatures, EXIF orientation, ICC presence and bounded TIFF camera make/model; reject unknown, malformed and oversized raster inputs with typed errors. Synthetic orientation export round-trip and metadata bounds tests pass.
 - [ ] Test HEIC native browser decoding and a licensed WASM fallback on iOS, Android, desktop.
 - [x] Prototype LibRaw WASM in worker; decode actual RAW pixels, not only embedded previews. (Sony ARW production-browser import passed in Chromium CI; broader camera matrix remains open.)
 - [ ] Measure memory/latency across target phones and desktop; document per-camera failures.
@@ -23,7 +23,7 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 ## Phase 2 — Color-managed high-precision engine
 - [x] Adopt and document linear-light working RGB space and white point. Linear sRGB/D65 for alpha; see docs/EDITING.md.
 - [ ] ICC parsing/conversion (e.g. LittleCMS WASM), orientation normalization, profile fixtures.
-- [ ] Float texture capability detection and fallback.
+- [x] Float texture capability detection and fallback. RAW uses RGBA32F when allocation succeeds, otherwise two RGBA8 textures reconstruct all 16-bit input codes in the shader.
 - [x] RAW development through LibRaw (black level, camera white balance, demosaic, camera matrix), retaining 16-bit linear sRGB with an sRGB display transform. Sony ARW edit/export/reimport passed; broader camera/color acceptance remains open.
 - [ ] Golden color tests: skin tones, grays, gradients, highlights, clipping.
 **Gate:** reproducible display/export transforms and agreed image-difference tolerances.
@@ -38,8 +38,8 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 
 ## Phase 4 — Full-resolution safe export
 - [x] Separate preview sizing from export; no preview upsampling. Export uses retained original and validated crop/size geometry.
-- [ ] Tiled GPU/worker processing with filter overlap, progress and cancellation.
-- [ ] JPEG+PNG output options, sRGB ICC, EXIF/metadata policy.
+- [x] Tiled GPU processing with 2 px overlap, bounded PNG strips, progress and cancellation between tiles. Native decode and browser JPEG encoding remain uninterruptible calls.
+- [x] JPEG+PNG output options and explicit sRGB declarations. PNG writes sRGB; JPEG embeds a compact matrix/TRC sRGB ICC profile. Exports deliberately strip source EXIF/GPS/camera metadata.
 - [ ] Repeated 45 MP exports without memory leaks or mobile crashes.
 **Gate:** export dimensions, profile and visual parity validated on target devices.
 
@@ -78,7 +78,7 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 - Precision follow-up: LibRaw now outputs retained 16-bit linear sRGB; float32 texture upload keeps precision through adjustment and export.
 
 ## Known alpha technical debt
-- Browser raster inputs remain 8-bit. RAW retains 16-bit linear sRGB and uploads float32 GPU tiles; a complete ICC-managed/wide-gamut pipeline remains open.
+- Browser raster inputs remain 8-bit and use browser profile conversion. RAW retains 16-bit linear sRGB; GPUs use float textures or a lossless packed 16-bit fallback. A complete app-controlled ICC/wide-gamut pipeline remains open.
 - JPEG retains a full output canvas capped at 16 MP; PNG uses streaming strips up to 48 MP, pending device memory validation.
 - RAW and HEIC worker decoding are experimental; multi-camera and real-device validation remains open. Histogram and spatial effects are absent.
 - GPU context-loss recovery, camera orientation/profile fixtures and physical-device lifecycle still need validation. Undo coalescing and sub-8-bit RAW tile precision have unit coverage.
@@ -90,3 +90,11 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 - RAW preview preparation now honors cancellation between scanlines.
 - Patched Vitest to 4.1.11; local tests/build pass and npm audit reports zero vulnerabilities. This tooling change does not alter the production image pipeline.
 - Added docs/SUPPORT.md with tested evidence, alpha release notes and explicit unsupported/unvalidated combinations.
+
+## Precision, orientation and output-profile milestone (2026-10-13)
+- Added float-texture probing plus a packed two-texture fallback that preserves every 16-bit RAW code value; packing/clamping has unit coverage.
+- Added bounded JPEG/PNG/WebP dimension inspection so oversized raster inputs fail before native decoder allocation.
+- Added synthetic EXIF orientation-6 preview/export round-trip coverage and bounded camera make/model/ICC marker tests.
+- JPEG exports now embed an explicit sRGB ICC profile; the real Sony RAW export smoke test verifies the marker before reimport.
+- CI verification: 36 unit tests, production build and 12 Chromium browser tests passed: https://github.com/nancruz/frame-photo-editor/actions/runs/38469141049 . A further bounded TIFF make/model test brings the local unit count to 37.
+- Physical browser/device profile conversion and camera fidelity remain acceptance gates.
