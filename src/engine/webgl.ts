@@ -22,22 +22,27 @@ export class WebGLRenderer{
  private gl:WebGL2RenderingContext;
  private program:WebGLProgram;
  private texture:WebGLTexture;
+ private buffer:WebGLBuffer|null=null;private vao:WebGLVertexArrayObject|null=null;
+ get maxTextureSize():number{return this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE)}
  private width=0;private height=0;
  constructor(public readonly canvas:HTMLCanvasElement){
   const gl=canvas.getContext('webgl2',{preserveDrawingBuffer:true,alpha:false});if(!gl)throw new Error('WebGL 2 unavailable on this device');
   this.gl=gl;const p=gl.createProgram();if(!p)throw new Error('Cannot allocate program');
-  gl.attachShader(p,compile(gl,gl.VERTEX_SHADER,VERT));gl.attachShader(p,compile(gl,gl.FRAGMENT_SHADER,FRAG));gl.linkProgram(p);
+  const vs=compile(gl,gl.VERTEX_SHADER,VERT),fs=compile(gl,gl.FRAGMENT_SHADER,FRAG);
+  gl.attachShader(p,vs);gl.attachShader(p,fs);gl.linkProgram(p);gl.deleteShader(vs);gl.deleteShader(fs);
   if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p)??'Shader link error');
   this.program=p;gl.useProgram(p);
-  const vao=gl.createVertexArray();gl.bindVertexArray(vao);
-  const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  const vao=gl.createVertexArray();this.vao=vao;gl.bindVertexArray(vao);
+  const buffer=gl.createBuffer();this.buffer=buffer;gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
   const attr=gl.getAttribLocation(p,'a_position');gl.enableVertexAttribArray(attr);gl.vertexAttribPointer(attr,2,gl.FLOAT,false,0,0);
   const tex=gl.createTexture();if(!tex)throw new Error('Cannot allocate texture');this.texture=tex;
   gl.bindTexture(gl.TEXTURE_2D,tex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
  }
  load(bitmap:ImageBitmap){
-  const gl=this.gl;this.width=bitmap.width;this.height=bitmap.height;
+  const gl=this.gl;if(gl.isContextLost())throw new Error('GPU context lost. Reopen the photo after restoring the editor.');
+  if(bitmap.width>this.maxTextureSize||bitmap.height>this.maxTextureSize)throw new Error('Image exceeds GPU texture limit');
+  this.width=bitmap.width;this.height=bitmap.height;
   if(this.width>gl.getParameter(gl.MAX_TEXTURE_SIZE)||this.height>gl.getParameter(gl.MAX_TEXTURE_SIZE))throw new Error('Image exceeds GPU texture limit. Smaller preview required.');
   this.canvas.width=this.width;this.canvas.height=this.height;gl.viewport(0,0,this.width,this.height);
   gl.bindTexture(gl.TEXTURE_2D,this.texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,0);
@@ -56,5 +61,5 @@ export class WebGLRenderer{
  async exportBlob(type:'image/png'|'image/jpeg',quality:number):Promise<Blob>{
   return new Promise((resolve,reject)=>this.canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Unable to export canvas')),type,quality));
  }
- dispose(){this.gl.deleteTexture(this.texture);this.gl.deleteProgram(this.program);}
+ dispose(){this.gl.deleteBuffer(this.buffer);this.gl.deleteVertexArray(this.vao);this.gl.deleteTexture(this.texture);this.gl.deleteProgram(this.program);}
 }

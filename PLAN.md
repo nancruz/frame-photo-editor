@@ -15,9 +15,9 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 - [x] WebGL 2 renderer with five initial adjustment controls.
 - [x] EditRecipe validation, Zustand undo/redo and JSON recipe.
 - [x] Local JPEG/PNG/WebP file open, canvas PNG export.
-- [ ] Install dependencies, verify typecheck/build/unit tests; fix failures.
-- [ ] Add GitHub Actions CI for build/test and documented Netlify deployment.
-- [ ] Split decoder, controller, renderer and export APIs; typed progress/cancel/error contract.
+- [x] Install dependencies, verify typecheck/build/unit tests; fix failures. (7 tests and production build passing locally, 2026-10-13.)
+- [x] Add GitHub Actions CI for build/test and documented Netlify deployment.
+- [x] Split decoder, renderer and export APIs; typed progress/cancel/error contract. UI remains the controller composition root.
 **Gate:** green build/test and reliable JPEG edit/export in desktop and mobile browsers.
 
 ## Phase 2 — Color-managed high-precision engine
@@ -60,8 +60,14 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 6. Run npm test and npm run build before merging; report any unavailable checks.
 7. Keep SPECS.md authoritative for scope; record feature status here.
 
+## Milestone notes
+- 2026-10-13: added signature-based JPEG/PNG/WebP/HEIC/RAW inspection, native HEIC decode attempt with explicit fallback error, bounded preview generation, original-pixel tiled GPU JPEG export (16 MP safety limit), cancellation/progress contracts, resource cleanup, and CI.
+- Format signature unit tests do not replace the real-camera fixture/device matrix; Phase 0 remains open.
+- Export uses GPU tiles but assembles them into one browser canvas for encoding, so the Phase 4 bounded-memory gate remains open.
+
 ## Known alpha technical debt
 - Current shader works from 8-bit browser textures; not an ICC-managed scene-linear pipeline.
 - Alpha PNG export is same-canvas, not tiled/safe for large images.
 - RAW/HEIC, mobile gestures, presets, histogram, crop and JPEG export absent.
 - Need verify canvas lifecycle, WebGL context loss, undo coalescing, orientation and precision.
+
