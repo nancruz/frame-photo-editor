@@ -24,6 +24,7 @@ Validation: `npm test` and `npm run build`.
 ## Project docs
 - [SPECS.md](SPECS.md) — authoritative functional and technical requirements
 - [PLAN.md](PLAN.md) — milestone tasks and acceptance gates
+- [docs/SUPPORT.md](docs/SUPPORT.md) — tested support, alpha release notes and device gates
 - [docs/ROADMAP.md](docs/ROADMAP.md) — original technical roadmap
 
 ## Deployment

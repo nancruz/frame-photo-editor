@@ -48,7 +48,7 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 - [ ] Accurate touch sliders, pinch/zoom/pan and hold-to-compare.
 - [ ] PWA/offline caching, installed mode, share sheet where supported.
 - [ ] Accessibility, GPU context recovery, resilience, real-device regression.
-- [ ] Browser/device/camera support documentation; honest beta release notes.
+- [x] Browser/device/camera support documentation and honest alpha release notes. docs/SUPPORT.md distinguishes implemented paths, tested fixtures and unvalidated devices. Beta release gate remains open.
 **Gate:** end-to-end smartphone and RAW workflows pass reference devices.
 
 ## Implementation order and agent rules
@@ -63,7 +63,7 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 ## Milestone notes
 - 2026-10-13: added signature-based JPEG/PNG/WebP/HEIC/RAW inspection, native HEIC decode attempt with explicit fallback error, bounded preview generation, original-pixel tiled GPU JPEG export (16 MP safety limit), cancellation/progress contracts, resource cleanup, and CI.
 - Format signature unit tests do not replace the real-camera fixture/device matrix; Phase 0 remains open.
-- Export uses GPU tiles but assembles them into one browser canvas for encoding, so the Phase 4 bounded-memory gate remains open.
+- JPEG assembles GPU tiles into a full browser canvas. PNG now streams bounded strips; the real-device memory gate remains open.
 
 - Decoder milestone: pinned LibRaw and HEIC WASM adapters; actual RAW development, abort/timeout cleanup, import progress and fresh history per photo. Added pixel-layout tests and production browser smoke harness. See docs/DECODERS.md. Local browser execution is blocked by container socket restrictions; CI carries the smoke tests.
 
@@ -81,5 +81,5 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 - Browser raster inputs remain 8-bit. RAW retains 16-bit linear sRGB and uploads float32 GPU tiles; a complete ICC-managed/wide-gamut pipeline remains open.
 - JPEG retains a full output canvas capped at 16 MP; PNG uses streaming strips up to 48 MP, pending device memory validation.
 - RAW and HEIC worker decoding are experimental; multi-camera and real-device validation remains open. Histogram and spatial effects are absent.
-- Need verify canvas lifecycle, WebGL context loss, undo coalescing, orientation and precision.
+- GPU context-loss recovery, camera orientation/profile fixtures and physical-device lifecycle still need validation. Undo coalescing and sub-8-bit RAW tile precision have unit coverage.
 
