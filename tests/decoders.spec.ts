@@ -13,8 +13,7 @@ for(const name of ['sample.ARW','sample.heic']){
   const dimensions=await page.locator('canvas').evaluate((canvas:HTMLCanvasElement)=>({width:canvas.width,height:canvas.height}));
   expect(dimensions.width).toBeGreaterThan(100);expect(dimensions.height).toBeGreaterThan(100);
   const range=await page.locator('canvas').evaluate((canvas:HTMLCanvasElement)=>{
-   const gl=canvas.getContext('webgl2')!;const pixels=new Uint8Array(canvas.width*canvas.height*4);
-   gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+   const pixels=canvas.getContext('2d')!.getImageData(0,0,canvas.width,canvas.height).data;
    let min=255,max=0;for(let i=0;i<pixels.length;i+=4){min=Math.min(min,pixels[i]);max=Math.max(max,pixels[i]);}return max-min;
   });
   expect(range).toBeGreaterThan(10);expect(workers.length).toBeGreaterThan(0);

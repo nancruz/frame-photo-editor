@@ -1,28 +1,46 @@
 import {WebGLRenderer} from '../engine/webgl';
 import type {EditRecipe} from '../domain/recipe';
-import {checkCancelled, PhotoError, type OperationOptions} from './contracts';
-export interface ExportSettings { type: 'image/png' | 'image/jpeg'; quality: number }
-/** Pointwise shader needs no overlap. Output canvas and decoded input remain resident; this is not a streaming encoder. */
-export async function exportPhoto(source: ImageBitmap, recipe: EditRecipe, settings: ExportSettings, options: OperationOptions = {}): Promise<Blob> {
- checkCancelled(options.signal);
- // Conservative cross-browser canvas allocation. Large-image export stays an explicit release gate.
- if(source.width*source.height>16_000_000 || Math.max(source.width,source.height)>8192) throw new PhotoError('limit','Full-resolution export currently supports up to 16 MP and 8192 pixels per edge. Your original is never replaced with an upscaled preview.');
- const output=document.createElement('canvas'); output.width=source.width; output.height=source.height;
- const ctx=output.getContext('2d',{colorSpace:'srgb'}); if(!ctx) throw new PhotoError('limit','Cannot allocate export canvas.');
- const tileCanvas=document.createElement('canvas'); const renderer=new WebGLRenderer(tileCanvas);
- try {
-  const edge=Math.min(1024,renderer.maxTextureSize); const count=Math.ceil(source.width/edge)*Math.ceil(source.height/edge);let done=0;
-  if(settings.type==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,output.width,output.height);}
-  for(let y=0;y<source.height;y+=edge)for(let x=0;x<source.width;x+=edge){
-   checkCancelled(options.signal);
-   const tile=await createImageBitmap(source,x,y,Math.min(edge,source.width-x),Math.min(edge,source.height-y));
-   try {renderer.load(tile);renderer.render(recipe);ctx.drawImage(tileCanvas,x,y);} finally {tile.close();}
-   options.onProgress?.('render',++done/count);
-   await new Promise<void>(resolve=>setTimeout(resolve,0));
+import {geometryTransform,geometryPlan} from '../domain/geometry';
+import {checkCancelled,PhotoError,type OperationOptions} from './contracts';
+import {createPngEncoder} from './png';
+export interface ExportSettings {type:'image/png'|'image/jpeg';quality:number;maxEdge?:number}
+export function exportSize(width:number,height:number,recipe:EditRecipe,maxEdge=0){
+ const p=geometryPlan(width,height,recipe.geometry);const scale=maxEdge>0?Math.min(1,maxEdge/Math.max(p.width,p.height)):1;
+ return {width:Math.max(1,Math.round(p.width*scale)),height:Math.max(1,Math.round(p.height*scale))};
+}
+/** PNG output is streamed in strips; JPEG uses the browser encoder and retains a 16 MP canvas limit. */
+export async function exportPhoto(source:ImageBitmap,recipe:EditRecipe,settings:ExportSettings,options:OperationOptions={}):Promise<Blob>{
+ checkCancelled(options.signal);const size=exportSize(source.width,source.height,recipe,settings.maxEdge),isPng=settings.type==='image/png';
+ const maxPixels=isPng?48_000_000:16_000_000,maxEdge=isPng?32768:8192;
+ if(size.width*size.height>maxPixels||Math.max(size.width,size.height)>maxEdge)throw new PhotoError('limit',`${isPng?'PNG supports up to 48 MP':'JPEG supports up to 16 MP'}; choose a smaller export size${isPng?'':' or PNG'}.`);
+ if(isPng&&typeof CompressionStream==='undefined')throw new PhotoError('unsupported','This browser cannot stream PNG exports. Try JPEG.');
+ const output=document.createElement('canvas');output.width=size.width;output.height=isPng?Math.min(128,size.height):size.height;
+ const ctx=output.getContext('2d',{colorSpace:'srgb',willReadFrequently:isPng});if(!ctx)throw new PhotoError('limit','Cannot allocate export canvas.');
+ const tileCanvas=document.createElement('canvas');let renderer:WebGLRenderer|undefined,encoder:ReturnType<typeof createPngEncoder>|undefined,finished=false;
+ try{
+  renderer=new WebGLRenderer(tileCanvas);if(isPng)encoder=createPngEncoder(size.width,size.height);
+  const edge=Math.min(1024,renderer.maxTextureSize),stripHeight=isPng?128:size.height;
+  for(let stripY=0;stripY<size.height;stripY+=stripHeight){
+   checkCancelled(options.signal);const height=Math.min(stripHeight,size.height-stripY);if(output.height!==height)output.height=height;
+   ctx.clearRect(0,0,output.width,output.height);if(!isPng){ctx.fillStyle='#fff';ctx.fillRect(0,0,output.width,output.height);}
+   ctx.save();ctx.translate(0,-stripY);geometryTransform(ctx,source.width,source.height,recipe.geometry,size.width,size.height);
+   // Only visit source tiles whose bounds can intersect this output strip.
+   const inverse=ctx.getTransform().inverse();const corners=[[0,0],[size.width,0],[0,height],[size.width,height]].map(([x,y])=>inverse.transformPoint({x,y}));
+   const minX=Math.max(0,Math.floor((Math.min(...corners.map(p=>p.x))-2)/edge)*edge),minY=Math.max(0,Math.floor((Math.min(...corners.map(p=>p.y))-2)/edge)*edge);
+   const maxX=Math.min(source.width,Math.max(...corners.map(p=>p.x))+2),maxY=Math.min(source.height,Math.max(...corners.map(p=>p.y))+2);
+   for(let y=minY;y<maxY;y+=edge)for(let x=minX;x<maxX;x+=edge){
+    checkCancelled(options.signal);const left=Math.max(0,x-2),top=Math.max(0,y-2),right=Math.min(source.width,x+edge+2),bottom=Math.min(source.height,y+edge+2);
+    const tile=await createImageBitmap(source,left,top,right-left,bottom-top);
+    try{renderer.load(tile);renderer.render(recipe);ctx.save();ctx.beginPath();ctx.rect(x,y,Math.min(edge,source.width-x),Math.min(edge,source.height-y));ctx.clip();ctx.drawImage(tileCanvas,left,top);ctx.restore();}finally{tile.close();}
+    await new Promise<void>(resolve=>setTimeout(resolve,0));
+   }
+   ctx.restore();if(encoder)await encoder.write(ctx.getImageData(0,0,size.width,height).data,height);
+   options.onProgress?.('render',(stripY+height)/size.height);
   }
   checkCancelled(options.signal);options.onProgress?.('encode',0);
-  const blob=await new Promise<Blob>((resolve,reject)=>output.toBlob(b=>b?resolve(b):reject(new PhotoError('limit','Export allocation failed.')),settings.type,Math.min(1,Math.max(0.1,settings.quality))));
-  checkCancelled(options.signal); if(blob.type!==settings.type)throw new PhotoError('unsupported','Browser does not support the requested export encoder.');
-  options.onProgress?.('encode',1);return blob;
- } finally {renderer.dispose();tileCanvas.width=tileCanvas.height=0;output.width=output.height=0;}
+  let blob:Blob;
+  if(encoder)blob=await encoder.finish();else blob=await new Promise<Blob>((resolve,reject)=>output.toBlob(b=>b?resolve(b):reject(new PhotoError('limit','Export allocation failed.')),settings.type,Math.min(1,Math.max(.1,settings.quality))));
+  checkCancelled(options.signal);if(blob.type!==settings.type)throw new PhotoError('unsupported','Requested encoder is unavailable.');
+  options.onProgress?.('encode',1);finished=true;return blob;
+ }finally{if(!finished)await encoder?.abort();renderer?.dispose();tileCanvas.width=tileCanvas.height=0;output.width=output.height=0;}
 }
