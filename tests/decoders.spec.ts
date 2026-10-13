@@ -4,12 +4,21 @@ const directory=process.env.FRAME_FIXTURES;
 for(const name of ['sample.ARW','sample.heic']){
  test(`develops actual ${name} pixels in the production build`,async({page})=>{
   test.skip(!directory,'Set FRAME_FIXTURES to your local authorized samples directory.');
+  const workers:string[]=[];page.on('worker',worker=>workers.push(worker.url()));
   await page.goto('/');
+  const started=Date.now();
   await page.locator('input[type=file]').first().setInputFiles(path.join(directory!,name));
   await expect(page.locator('.image-footer')).toContainText(name,{timeout:120000});
   await expect(page.getByRole('alert')).toHaveCount(0);
   const dimensions=await page.locator('canvas').evaluate((canvas:HTMLCanvasElement)=>({width:canvas.width,height:canvas.height}));
   expect(dimensions.width).toBeGreaterThan(100);expect(dimensions.height).toBeGreaterThan(100);
+  const range=await page.locator('canvas').evaluate((canvas:HTMLCanvasElement)=>{
+   const gl=canvas.getContext('webgl2')!;const pixels=new Uint8Array(canvas.width*canvas.height*4);
+   gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+   let min=255,max=0;for(let i=0;i<pixels.length;i+=4){min=Math.min(min,pixels[i]);max=Math.max(max,pixels[i]);}return max-min;
+  });
+  expect(range).toBeGreaterThan(10);expect(workers.length).toBeGreaterThan(0);
+  console.log(JSON.stringify({fixture:name,elapsedMs:Date.now()-started,preview:dimensions,redChannelRange:range,workers:workers.length}));
  });
 }
 test('rejects a malformed RAW file without hanging',async({page})=>{

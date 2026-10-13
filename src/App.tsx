@@ -22,9 +22,17 @@ export default function App(){
    const result=await decodePhoto(file,{signal:job.signal,onProgress:(stage,fraction)=>setProgress(`${stage}: ${Math.round(fraction*100)}%`)});decoded=result.bitmap;preview=await previewBitmap(decoded);job.signal.throwIfAborted();
    if(!renderer.current)throw new Error('Renderer is unavailable');
    renderer.current.load(preview);source.current?.close();source.current=decoded;decoded=null;useEditor.setState({recipe:{...DEFAULT_RECIPE},past:[],future:[],dragStart:null});setPhoto({name:file.name,size:`${result.bitmap.width} × ${result.bitmap.height}`});renderer.current.render(DEFAULT_RECIPE);
-  }catch(e){setError(e instanceof Error?e.message:String(e));}finally{preview?.close();decoded?.close();operation.current=null;setBusy(false)}
+  }catch(e){if(!job.signal.aborted)setError(e instanceof Error?e.message:String(e));}finally{preview?.close();decoded?.close();operation.current=null;setBusy(false)}
  }
- async function exportImage(){if(!source.current||!photo||operation.current)return;setError('');setBusy(true);try{const blob=await exportPhoto(source.current,recipe,{type:'image/jpeg',quality:.92});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=photo.name.replace(/\.[^.]+$/,'')+'-edited.jpg';link.click();setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(e){setError(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}
+ async function exportImage(){
+  if(!source.current||!photo||operation.current)return;
+  const job=new AbortController();operation.current=job;setError('');setBusy(true);setProgress('Rendering export');
+  try{
+   const blob=await exportPhoto(source.current,recipe,{type:'image/jpeg',quality:.92},{signal:job.signal,onProgress:(stage,fraction)=>setProgress(`${stage}: ${Math.round(fraction*100)}%`)});
+   const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=photo.name.replace(/\.[^.]+$/,'')+'-edited.jpg';link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }catch(e){if(!job.signal.aborted)setError(e instanceof Error?e.message:String(e));}
+  finally{operation.current=null;setBusy(false);setProgress('');}
+ }
  function saveRecipe(){const data=new Blob([JSON.stringify(recipe,null,2)],{type:'application/json'});const url=URL.createObjectURL(data);const a=document.createElement('a');a.href=url;a.download='frame-recipe.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000)}
  async function importRecipe(file?:File){if(!file)return;try{apply(validateRecipe(JSON.parse(await file.text())));setError('')}catch(e){setError(e instanceof Error?e.message:String(e))}}
  return <div className="app"><header className="topbar"><div className="brand"><span className="brand-icon">◈</span> frame <span className="beta">ALPHA</span></div><div className="actions"><button onClick={undo} disabled={!past.length} title="Undo"><Undo2 size={18}/></button><button onClick={redo} disabled={!future.length} title="Redo"><Redo2 size={18}/></button><span className="separator"/><button onClick={()=>fileInput.current?.click()}><Upload size={17}/><span className="desktop-label">Open</span></button><button className="primary" disabled={!photo||busy} onClick={exportImage}><Download size={16}/> Export</button></div></header>
