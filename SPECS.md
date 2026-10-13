@@ -17,7 +17,8 @@ A privacy-first, non-destructive photographic editor for desktop and mobile brow
 - Exposure, brightness, contrast, saturation, warmth; undo/redo/reset and hold-to-compare.
 - PNG canvas export and JSON recipe import/export.
 - Responsive basic UI, no server requests.
-- **Limitations:** 8-bit browser-decoded input and same-canvas export; no RAW, HEIC, ICC pipeline, crop, color-critical accuracy, or tiled output. Initial quality/performance not validated on real devices.
+- Experimental LibRaw development and HEIC WASM fallback in disposable workers; bounded preview and tiled GPU JPEG export (16 MP cap).
+- **Limitations:** 8-bit display RGB, full output canvas allocation, no ICC pipeline, crop or color-critical accuracy. RAW/HEIC camera compatibility and quality/performance are not validated on real devices.
 
 ## Target MVP requirements (not all implemented)
 ### Input and validation
@@ -62,3 +63,4 @@ Every control must have documented semantics and tests. Mobile controls must not
 
 ### Definition of done
 A supported smartphone or RAW photo opens, receives reproducible non-destructive edits, exports at requested full resolution with correct appearance and profile, and completes on tested desktop/mobile devices without crashing. The sample camera compatibility matrix and color-difference tolerances are published. No claims of Lightroom RAW quality parity without objective and visual tests.
+

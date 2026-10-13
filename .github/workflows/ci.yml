@@ -14,3 +14,12 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Fetch upstream smoke samples (not redistributed)
+        run: |
+          mkdir -p /tmp/frame-fixtures
+          curl --fail --location --retry 2 -o /tmp/frame-fixtures/sample.ARW https://raw.githubusercontent.com/ybouane/LibRaw-Wasm/main/example-sony.ARW
+          curl --fail --location --retry 2 -o /tmp/frame-fixtures/sample.heic https://raw.githubusercontent.com/strukturag/libheif/master/examples/example.heic
+      - run: npm run test:browser
+        env:
+          FRAME_FIXTURES: /tmp/frame-fixtures

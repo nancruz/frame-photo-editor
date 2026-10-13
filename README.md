@@ -20,7 +20,7 @@ Validation: `npm test` and `npm run build`.
 - Responsive desktop/mobile interface.
 
 ## Known limitations
-**This is an alpha technical prototype, not the full photo editing MVP.** RAW is detected and rejected with a clear message. HEIC depends on native browser decoding; the licensed local fallback is pending. The pipeline operates on browser-decoded 8-bit textures and is not ICC-managed. Tiled GPU rendering still assembles into one browser canvas for encoding. Crop and professional tools are pending. Do not use for color-critical production photos.
+**This is an alpha technical prototype, not the full photo editing MVP.** RAW development and a local HEIC WASM fallback are implemented as experimental worker adapters. Camera and device compatibility remains unverified; see [decoder notes](docs/DECODERS.md). The pipeline operates on browser-decoded 8-bit textures and is not ICC-managed. Tiled GPU rendering still assembles into one browser canvas for encoding. Crop and professional tools are pending. Do not use for color-critical production photos.
 
 ## Project docs
 - [SPECS.md](SPECS.md) — authoritative functional and technical requirements

@@ -65,9 +65,11 @@ Status: **Alpha foundation created; full MVP incomplete.** Update this document 
 - Format signature unit tests do not replace the real-camera fixture/device matrix; Phase 0 remains open.
 - Export uses GPU tiles but assembles them into one browser canvas for encoding, so the Phase 4 bounded-memory gate remains open.
 
+- Decoder milestone: pinned LibRaw and HEIC WASM adapters; actual RAW development, abort/timeout cleanup, import progress and fresh history per photo. Added pixel-layout tests and production browser smoke harness. See docs/DECODERS.md. Local browser execution is blocked by container socket restrictions; CI carries the smoke tests.
+
 ## Known alpha technical debt
 - Current shader works from 8-bit browser textures; not an ICC-managed scene-linear pipeline.
-- Alpha PNG export is same-canvas, not tiled/safe for large images.
-- RAW/HEIC, mobile gestures, presets, histogram, crop and JPEG export absent.
+- Export uses GPU tiles but retains a full output canvas, capped at 16 MP.
+- RAW and HEIC worker decoding are experimental; multi-camera and real-device validation remains open. Mobile gestures, presets, histogram and crop are absent.
 - Need verify canvas lifecycle, WebGL context loss, undo coalescing, orientation and precision.
 

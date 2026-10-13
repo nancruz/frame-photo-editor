@@ -6,11 +6,19 @@ export async function decodePhoto(file: File, options: OperationOptions = {}): P
  if(file.size>150*1024*1024) throw new PhotoError('limit','File exceeds the 150 MB input safety limit.');
  const format=detectFormat(new Uint8Array(await file.slice(0,4096).arrayBuffer()));
  checkCancelled(options.signal);
- if(format==='raw') throw new PhotoError('unsupported','Camera RAW decoding is not yet available. Export a JPEG from your camera software; embedded previews are never substituted for RAW pixels.');
+
  options.onProgress?.('decode',0);
  let bitmap: ImageBitmap;
- try { bitmap=await createImageBitmap(file,{imageOrientation:'from-image',colorSpaceConversion:'default'}); }
- catch { throw new PhotoError('decode',format==='heic'?'This browser cannot decode this HEIC file. A local WASM fallback is not yet available.':'Unable to decode this photo. The file may be damaged or unsupported.'); }
+ if(format==='raw') {
+  const {decodeRaw}=await import('./wasm-decoders');bitmap=await decodeRaw(await file.arrayBuffer(),options);
+ } else {
+  try {bitmap=await createImageBitmap(file,{imageOrientation:'from-image',colorSpaceConversion:'default'});}
+  catch {
+   checkCancelled(options.signal);
+   if(format!=='heic')throw new PhotoError('decode','Unable to decode this photo. The file may be damaged or unsupported.');
+   const {decodeHeic}=await import('./wasm-decoders');bitmap=await decodeHeic(await file.arrayBuffer(),options);
+  }
+ }
  try {
   checkCancelled(options.signal);
   if(bitmap.width*bitmap.height>48_000_000) throw new PhotoError('limit','Decoded photo exceeds the 48 MP safety limit.');
