@@ -2,25 +2,26 @@
 
 ## Color and control semantics
 
-The alpha renderer uses linear-light sRGB primaries with D65 white for its point adjustments. Input/output use the IEC sRGB transfer function. A single fragment shader evaluates light adjustments at high precision, then converts to display sRGB for HSL and the tone curve. Intermediate operations are not stored in 8-bit framebuffers. JPEG/PNG/WebP/HEIC inputs remain browser-decoded 8-bit. LibRaw now develops to 16-bit linear sRGB (gamma 1), retained as Uint16Array. Preview and export tiles upload linear values into RGBA32F textures when supported. If allocation fails, two RGBA8 textures hold the high and low bytes and reconstruct the original 16-bit codes in the shader. Both paths bypass the input sRGB transfer function. Quantization to 8-bit occurs at final display/export, not before exposure edits. RAW preview samples the full linear source at bounded dimensions; improved antialiased linear resampling remains open.
+The renderer uses linear-light sRGB primaries with D65 white for its point adjustments. Input/output use the IEC sRGB transfer function. Embedded RGB ICC profiles in JPEG, PNG and WebP are extracted from bounded container data and converted to sRGB with LittleCMS WASM using relative colorimetric intent. Non-RGB profiles remain browser-managed because `ImageBitmap` does not expose original CMYK samples. Unprofiled raster images and HEIC use browser/libheif decoding; RAW is developed by LibRaw to 16-bit linear sRGB. A single fragment shader evaluates point adjustments at high precision, then converts to display sRGB for HSL, the curve and vignette. RAW tiles use RGBA32F when available or two RGBA8 textures that losslessly reconstruct 16-bit input codes. Quantization to 8-bit occurs only at display/export.
 
 - Exposure: multiply linear RGB by 2^EV, -5 to +5 EV.
-- Contrast: linear slope around 18% gray, slope = 1 + 0.008 × setting.
-- Brightness: legacy linear RGB offset, 0.002 × setting.
-- Temperature/tint: relative creative channel offsets, not Kelvin or camera white-balance calibration.
-- Shadows/highlights/whites/blacks: smooth luminance-weighted exposure offsets. These are global tonal controls; no local/spatial filtering or detail recovery is claimed.
+- Contrast: linear slope around 18% gray, with slope = 2^(setting/100). Thus +100 doubles and -100 halves contrast around the pivot.
+- Brightness: secondary exposure adjustment, ±1 stop across its ±100 range.
+- Temperature/tint: creative multiplicative channel balance in stops. Temperature shifts red against blue; tint shifts red/blue against green. These are deliberately not Kelvin or camera-white-balance values.
+- Shadows/highlights/whites/blacks: smooth Rec.709-luminance masks applying up to ±1 stop at ±100. They are global tonal controls and do not claim local detail recovery.
 - Saturation: scale chroma around Rec.709 luminance. Vibrance adds more chroma to lower-chroma pixels.
 - HSL: eight smoothly overlapping hue bands with hue in degrees and relative saturation/luminance controls. Grays remain neutral.
 - Curve: five monotonic, piecewise-linear points in display sRGB, applied equally to all channels.
+- Vignette: smooth radial source-coordinate darkening from 0 to two stops at the corners. Global tile coordinates prevent seams; it performs no blur or sharpening and therefore cannot create convolution halos.
 - Presets: creative settings only; keep current crop geometry.
 
-Color correctness is still a release gate: full ICC input conversion, wide-gamut profiles and camera/color reference comparisons remain open. RAW textures are sampled in a single shader pass; a multi-pass floating-point graph is not needed for these point effects. Capability probing selects float input or a lossless packed 16-bit fallback. Allocation failure on both paths is reported explicitly. No Lightroom-equivalence claim is made.
+Golden tests lock sRGB transfer values plus neutral, gray, skin-like, saturated, shadow and highlight patches. A production-browser test compares the shader against the independent CPU reference within two 8-bit values. Camera-chart comparison and physical wide-gamut display validation remain release gates; no Lightroom-equivalence claim is made.
 
 ## Geometry and history
 
 Crop x/y/width/height are normalized source coordinates. Crop bounds are validated on JSON import. Straighten rotates around the crop center with enough zoom to avoid empty corners. Flips are applied before clockwise quarter rotation. Preview and export share the same affine transform. Export dimensions are rounded from the original source crop; preview never becomes the export source.
 
-Version 2 recipes contain controls, HSL, curve and geometry. Version 1 recipes migrate with new settings at neutral. Because the new renderer clamps display output before the curve, extreme legacy values may differ slightly; recipes are creative settings, not an archival rendering guarantee. Pointer and keyboard slider interactions coalesce into one undo action; history is capped at 50 entries and reset on photo import.
+Version 3 recipes add vignette. Version 1 and 2 recipes migrate with later settings at neutral. The calibrated stop-based math intentionally changes the appearance of pre-v3 alpha recipes; these recipes are creative settings, not an archival rendering guarantee. Pointer and keyboard slider interactions coalesce into one undo action; history is capped at 50 entries and reset on photo import.
 
 ## Export and memory
 

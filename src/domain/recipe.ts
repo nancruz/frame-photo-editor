@@ -1,22 +1,22 @@
 export const RANGE = {
  exposure:[-5,5,.05], contrast:[-100,100,1], highlights:[-100,100,1], shadows:[-100,100,1], whites:[-100,100,1], blacks:[-100,100,1],
- warmth:[-100,100,1], tint:[-100,100,1], vibrance:[-100,100,1], saturation:[-100,100,1], brightness:[-100,100,1]
+ warmth:[-100,100,1], tint:[-100,100,1], vibrance:[-100,100,1], saturation:[-100,100,1], brightness:[-100,100,1], vignette:[0,100,1]
 } as const;
 export type Adjustment=keyof typeof RANGE;
 export const CHANNELS=['Red','Orange','Yellow','Green','Aqua','Blue','Purple','Magenta'] as const;
 export interface HSL {hue:number;saturation:number;luminance:number}
 export interface Geometry {x:number;y:number;width:number;height:number;rotation:number;straighten:number;flipX:boolean;flipY:boolean}
-export type EditRecipe={version:2;geometry:Geometry;hsl:HSL[];curve:number[]} & Record<Adjustment,number>;
-export function freshRecipe():EditRecipe{return {version:2,exposure:0,contrast:0,highlights:0,shadows:0,whites:0,blacks:0,warmth:0,tint:0,vibrance:0,saturation:0,brightness:0,geometry:{x:0,y:0,width:1,height:1,rotation:0,straighten:0,flipX:false,flipY:false},hsl:CHANNELS.map(()=>({hue:0,saturation:0,luminance:0})),curve:[0,.25,.5,.75,1]};}
+export type EditRecipe={version:3;geometry:Geometry;hsl:HSL[];curve:number[]} & Record<Adjustment,number>;
+export function freshRecipe():EditRecipe{return {version:3,exposure:0,contrast:0,highlights:0,shadows:0,whites:0,blacks:0,warmth:0,tint:0,vibrance:0,saturation:0,brightness:0,vignette:0,geometry:{x:0,y:0,width:1,height:1,rotation:0,straighten:0,flipX:false,flipY:false},hsl:CHANNELS.map(()=>({hue:0,saturation:0,luminance:0})),curve:[0,.25,.5,.75,1]};}
 export const DEFAULT_RECIPE=freshRecipe();
 export const clamp=(v:number,min:number,max:number)=>Math.min(max,Math.max(min,v));
 export function clampSetting(key:Adjustment,value:number){return Number.isFinite(value)?clamp(value,RANGE[key][0],RANGE[key][1]):0;}
 function number(value:unknown,name:string){if(typeof value!=='number'||!Number.isFinite(value))throw new Error(`Invalid ${name} value`);return value;}
 export function validateRecipe(candidate:unknown):EditRecipe{
  if(!candidate||typeof candidate!=='object')throw new Error('Unsupported recipe version');
- const v=candidate as Record<string,unknown>;if(v.version!==1&&v.version!==2)throw new Error('Unsupported recipe version');
+ const v=candidate as Record<string,unknown>;if(v.version!==1&&v.version!==2&&v.version!==3)throw new Error('Unsupported recipe version');
  const out=freshRecipe();
- const keys=v.version===1?['exposure','contrast','saturation','warmth','brightness'] as Adjustment[]:Object.keys(RANGE) as Adjustment[];
+ const keys=v.version===1?['exposure','contrast','saturation','warmth','brightness'] as Adjustment[]:v.version===2?(Object.keys(RANGE).filter(key=>key!=='vignette') as Adjustment[]):Object.keys(RANGE) as Adjustment[];
  for(const key of keys)out[key]=clampSetting(key,number(v[key],key));
  if(v.version===1)return out;
  const g=v.geometry as Record<string,unknown>;if(!g||typeof g!=='object')throw new Error('Invalid geometry');

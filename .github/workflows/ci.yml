@@ -18,15 +18,21 @@ jobs:
       - name: Fetch upstream smoke samples (not redistributed)
         run: |
           mkdir -p /tmp/frame-fixtures
-          curl --fail --location --retry 2 -o /tmp/frame-fixtures/sample.ARW https://raw.githubusercontent.com/ybouane/LibRaw-Wasm/078bdd49c10f62725b460f5594bc3141a82a9579/example-sony.ARW
+          download() {
+            curl --fail --location --retry 2 -o "/tmp/frame-fixtures/$1" "$2"
+            echo "$3  /tmp/frame-fixtures/$1" | sha256sum --check --strict
+          }
           curl --fail --location --retry 2 -o /tmp/frame-fixtures/sample.heic https://raw.githubusercontent.com/strukturag/libheif/f223c23c5863cd9e7f29c48438c4da3b308a17aa/examples/example.heic
-          curl --fail --location --retry 2 -o /tmp/frame-fixtures/canon-400d.CR2 https://raw.githubusercontent.com/f-spot/raw-samples/54425e2cd53ec17d5fd88ee3277d03f54bf1fe84/CR2/sample_canon_400d1.cr2
-          curl --fail --location --retry 2 -o /tmp/frame-fixtures/nikon-d90.NEF https://raw.githubusercontent.com/f-spot/raw-samples/54425e2cd53ec17d5fd88ee3277d03f54bf1fe84/NEF/RAW_NIKON_D90.NEF
-          curl --fail --location --retry 2 -o /tmp/frame-fixtures/leica-m8.DNG https://raw.githubusercontent.com/f-spot/raw-samples/54425e2cd53ec17d5fd88ee3277d03f54bf1fe84/DNG/RAW_LEICA_M8.DNG
+          download sample.ARW 'https://raw.pixls.us/getfile.php/2414/nice/Sony%20-%20ILCE-7M3%20-%2014bit%2014bit%20compressed%20%283%3A2%29.ARW' 250784580ea527442c09004417bb0eead484f2bf3ee8f9121a776ac65bb50d0f
+          download canon-5d4.CR2 'https://raw.pixls.us/getfile.php/983/nice/Canon%20-%20EOS%205D%20Mark%20IV%20-%20RAW%20%283%3A2%29.CR2' 02b23f9cc6dc4c99fb39aa4d1f65ac227804d06461ac1bd0f842aa2f3beb8fe4
+          download canon-eos-r.CR3 'https://raw.pixls.us/getfile.php/4611/nice/Canon%20-%20EOS%20R%20-%203%3A2.CR3' cfd118af4477ef37538eb953421572a7a5c80694e59764049223107cc0c9ae83
+          download nikon-z6.NEF 'https://raw.pixls.us/getfile.php/3581/nice/Nikon%20-%20Z%206%20-%2014bit%2014bit%20compressed%20%283%3A2%29.NEF' 8ca94584578b35a422744c1a610174ce37df0691588edfdecaec3111b3fbbb02
+          download fujifilm-xt4.RAF 'https://raw.pixls.us/getfile.php/3918/nice/Fujifilm%20-%20X-T4%20-%2014bit%2014bit%20compressed%20%283%3A2%29.RAF' 871836938ffa695f4c41765ddb107c2703ce755f7f3ced7e10f9e04746f1734e
+          download ricoh-gr3.DNG 'https://raw.pixls.us/getfile.php/3115/nice/Ricoh%20-%20GR%20III%20-%2014bit%20%283%3A2%29.DNG' 05513ee72f7cac4165534c9f64995412084f414a033c80c473c79fd94154292e
       - run: npm run test:browser
         env:
           FRAME_FIXTURES: /tmp/frame-fixtures
-          FRAME_FIXTURE_NAMES: sample.ARW,sample.heic,canon-400d.CR2,nikon-d90.NEF,leica-m8.DNG
+          FRAME_FIXTURE_NAMES: sample.ARW,sample.heic,canon-5d4.CR2,canon-eos-r.CR3,nikon-z6.NEF,fujifilm-xt4.RAF,ricoh-gr3.DNG
       - name: Save browser inspection screenshots
         if: always()
         uses: actions/upload-artifact@v4

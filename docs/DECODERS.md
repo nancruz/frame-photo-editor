@@ -14,17 +14,19 @@ CI downloads, but never commits or redistributes, these exact upstream files:
 
 | Local name | Source | Upstream blob | Automated evidence |
 | --- | --- | --- | --- |
-| `sample.ARW` | [LibRaw-Wasm Sony example](https://github.com/ybouane/LibRaw-Wasm/blob/078bdd49c10f62725b460f5594bc3141a82a9579/example-sony.ARW) | commit `078bdd49c10f62725b460f5594bc3141a82a9579` | Import, edit, JPEG export with ICC marker, reimport |
+| `sample.ARW` | [raw.pixls.us Sony a7 III](https://raw.pixls.us/getfile.php/2414/nice/Sony%20-%20ILCE-7M3%20-%2014bit%2014bit%20compressed%20%283%3A2%29.ARW) | SHA-256 `25078458…d0f` | Import, edit, JPEG export with ICC marker, reimport |
 | `sample.heic` | [libheif example](https://github.com/strukturag/libheif/blob/f223c23c5863cd9e7f29c48438c4da3b308a17aa/examples/example.heic) | commit `f223c23c5863cd9e7f29c48438c4da3b308a17aa` | Import and non-flat preview |
-| `canon-400d.CR2` | [f-spot Canon 400D](https://github.com/f-spot/raw-samples/blob/54425e2cd53ec17d5fd88ee3277d03f54bf1fe84/CR2/sample_canon_400d1.cr2) | blob `242b11d790f9b103a51c5916a0155005e87fe62b` | Import and non-flat preview |
-| `nikon-d90.NEF` | [f-spot Nikon D90](https://github.com/f-spot/raw-samples/blob/54425e2cd53ec17d5fd88ee3277d03f54bf1fe84/NEF/RAW_NIKON_D90.NEF) | blob `dc3544cfad56c81a3c5391b3f7d53ea061fe5436` | Import and non-flat preview |
-| `leica-m8.DNG` | [f-spot Leica M8](https://github.com/f-spot/raw-samples/blob/54425e2cd53ec17d5fd88ee3277d03f54bf1fe84/DNG/RAW_LEICA_M8.DNG) | blob `aef6a299e5857877f5e45f566c5e193c6329c0a8` | Import and non-flat preview |
+| `canon-5d4.CR2` | [raw.pixls.us Canon 5D Mark IV](https://raw.pixls.us/getfile.php/983/nice/Canon%20-%20EOS%205D%20Mark%20IV%20-%20RAW%20%283%3A2%29.CR2) | SHA-256 `02b23f9c…8fe4` | Import and non-flat preview |
+| `canon-eos-r.CR3` | [raw.pixls.us Canon EOS R](https://raw.pixls.us/getfile.php/4611/nice/Canon%20-%20EOS%20R%20-%203%3A2.CR3) | SHA-256 `cfd118af…e83` | Import and non-flat preview |
+| `nikon-z6.NEF` | [raw.pixls.us Nikon Z 6](https://raw.pixls.us/getfile.php/3581/nice/Nikon%20-%20Z%206%20-%2014bit%2014bit%20compressed%20%283%3A2%29.NEF) | SHA-256 `8ca94584…b02` | Import and non-flat preview |
+| `fujifilm-xt4.RAF` | [raw.pixls.us Fujifilm X-T4](https://raw.pixls.us/getfile.php/3918/nice/Fujifilm%20-%20X-T4%20-%2014bit%2014bit%20compressed%20%283%3A2%29.RAF) | SHA-256 `87183693…34e` | Import and non-flat preview |
+| `ricoh-gr3.DNG` | [raw.pixls.us Ricoh GR III](https://raw.pixls.us/getfile.php/3115/nice/Ricoh%20-%20GR%20III%20-%2014bit%20%283%3A2%29.DNG) | SHA-256 `05513ee7…92e` | Import and non-flat preview |
 
-The f-spot repository describes its files only as “CCL (Creative Common License)” without naming a specific Creative Commons license. That is insufficient for a redistribution decision. All five fixtures therefore remain external test inputs; no sample bytes are included in this repository.
+raw.pixls.us records each of these six RAW files as CC0 1.0 and publishes the full SHA-256 hashes used by CI. The files remain external test inputs so the application repository stays small. The libheif HEIC example is also external and is not redistributed.
 
 The 2026-10-14 CI run produced these bounded previews on the GitHub-hosted Chromium runner. Times are smoke-test observations, not device benchmarks: Sony ARW 2048 × 1368 in 18.8 s (including edit/export/reimport), HEIC 1280 × 854 in 1.8 s, Canon CR2 2048 × 1364 in 6.0 s, Nikon NEF 2048 × 1363 in 4.9 s and Leica DNG 2048 × 1378 in 3.8 s.
 
-CR3 and RAF samples, modern 12–45 MP cameras, iOS Safari/Android Chrome tests, orientation/profile fixtures, visual comparisons and memory benchmarks remain open. A passing fixture does not imply all cameras sharing its file extension work.
+Additional 12–45 MP camera bodies, iOS Safari/Android Chrome tests, HEIC device/profile variants, visual comparisons and physical-device memory benchmarks remain open. A passing fixture does not imply all cameras sharing its file extension work.
 
 ## Dependencies and distribution
 

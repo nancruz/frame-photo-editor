@@ -1,4 +1,4 @@
-import {isLinear,linearTile,type PhotoSource} from './source';
+import {isLinear,isProfiled,linearTile,profiledTile,type PhotoSource} from './source';
 import {WebGLRenderer} from '../engine/webgl';
 import type {EditRecipe} from '../domain/recipe';
 import {geometryTransform,geometryPlan} from '../domain/geometry';
@@ -32,8 +32,8 @@ export async function exportPhoto(source:PhotoSource,recipe:EditRecipe,settings:
    const maxX=Math.min(source.width,Math.max(...corners.map(p=>p.x))+2),maxY=Math.min(source.height,Math.max(...corners.map(p=>p.y))+2);
    for(let y=minY;y<maxY;y+=edge)for(let x=minX;x<maxX;x+=edge){
     checkCancelled(options.signal);const left=Math.max(0,x-2),top=Math.max(0,y-2),right=Math.min(source.width,x+edge+2),bottom=Math.min(source.height,y+edge+2);
-    const tile=isLinear(source)?null:await createImageBitmap(source,left,top,right-left,bottom-top);
-    try{if(isLinear(source))renderer.loadLinear(linearTile(source,left,top,right-left,bottom-top),right-left,bottom-top);else renderer.load(tile!);renderer.render(recipe);ctx.save();ctx.beginPath();ctx.rect(x,y,Math.min(edge,source.width-x),Math.min(edge,source.height-y));ctx.clip();ctx.drawImage(tileCanvas,left,top);ctx.restore();}finally{tile?.close();}
+    const tile=isLinear(source)?null:isProfiled(source)?await profiledTile(source,left,top,right-left,bottom-top):await createImageBitmap(source,left,top,right-left,bottom-top);
+    try{if(isLinear(source))renderer.loadLinear(linearTile(source,left,top,right-left,bottom-top),right-left,bottom-top,left,top,source.width,source.height);else renderer.load(tile!,left,top,source.width,source.height);renderer.render(recipe);ctx.save();ctx.beginPath();ctx.rect(x,y,Math.min(edge,source.width-x),Math.min(edge,source.height-y));ctx.clip();ctx.drawImage(tileCanvas,left,top);ctx.restore();}finally{tile?.close();}
     await new Promise<void>(resolve=>setTimeout(resolve,0));
    }
    ctx.restore();if(encoder)await encoder.write(ctx.getImageData(0,0,size.width,height).data,height);

@@ -1,4 +1,4 @@
-import {isLinear,closeSource,linearPreview,type PhotoSource} from './source';
+import {isLinear,isProfiled,closeSource,linearPreview,profiledPreview,type PhotoSource} from './source';
 import {checkCancelled, PhotoError, type OperationOptions} from './contracts';
 import {inspectMetadata,type PhotoMetadata} from './metadata';
 import {detectFormat,inspectDimensions,type Format} from './inspect';
@@ -16,7 +16,8 @@ export async function decodePhoto(file: File, options: OperationOptions = {}): P
  if(format==='raw') {
   const {decodeRaw}=await import('./wasm-decoders');bitmap=await decodeRaw(await file.arrayBuffer(),options);
  } else {
-  try {bitmap=await createImageBitmap(file,{imageOrientation:'from-image',colorSpaceConversion:'default',premultiplyAlpha:'none'});}
+  const iccModule=format==='jpeg'||format==='png'||format==='webp'?await import('./icc'):null,profile=iccModule?await iccModule.extractIccProfile(header,format).catch(()=>null):null,icc=profile&&iccModule!.iccColorSpace(profile)==='RGB '?profile:null;
+  try {const decoded=await createImageBitmap(file,{imageOrientation:'from-image',colorSpaceConversion:icc?'none':'default',premultiplyAlpha:'none'});bitmap=icc?{kind:'profiled',width:decoded.width,height:decoded.height,bitmap:decoded,profile:icc}:decoded;}
   catch {
    checkCancelled(options.signal);
    if(format!=='heic')throw new PhotoError('decode','Unable to decode this photo. The file may be damaged or unsupported.');
@@ -31,6 +32,7 @@ export async function decodePhoto(file: File, options: OperationOptions = {}): P
 }
 export async function previewBitmap(source: PhotoSource, maxEdge=2048): Promise<ImageBitmap> {
  if(isLinear(source))return (await linearPreview(source,maxEdge)).bitmap;
+ if(isProfiled(source))return profiledPreview(source,maxEdge);
  const scale=Math.min(1,maxEdge/Math.max(source.width,source.height));
  return createImageBitmap(source,{resizeWidth:Math.max(1,Math.round(source.width*scale)),resizeHeight:Math.max(1,Math.round(source.height*scale)),resizeQuality:'high'});
 }

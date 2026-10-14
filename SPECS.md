@@ -14,10 +14,10 @@ A privacy-first, non-destructive photographic editor for desktop and mobile brow
 ## Current alpha implementation
 - React/TypeScript/Vite, Zustand, WebGL 2; private local-only editing.
 - Experimental LibRaw and HEIC WASM workers, bounded preview and retained source.
-- P0 editing controls, version 2 recipes, history grouping and geometry.
+- Calibrated P0 editing controls, version 3 recipes, vignette, history grouping and geometry.
 - Streaming PNG up to 48 MP; browser JPEG up to 16 MP; output options and cancellation.
 - Mobile gestures, collapsible controls, keyboard access, offline app shell and optional file sharing.
-- **Limitations:** 8-bit raster input, incomplete ICC/wide-gamut RAW color management, no spatial effects/histogram, no 45 MP JPEG or metadata preservation. Physical device/camera/color acceptance is still required. See PLAN.md and docs/EDITING.md.
+- **Limitations:** 8-bit raster input, non-RGB/wide-gamut display validation pending, no convolution effects/histogram, no 45 MP JPEG or metadata preservation. Physical device/camera/color acceptance is still required. See PLAN.md and docs/EDITING.md.
 
 ## Target MVP requirements (not all implemented)
 ### Input and validation
