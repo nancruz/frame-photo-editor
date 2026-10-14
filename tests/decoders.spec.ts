@@ -2,7 +2,8 @@ import {test,expect} from '@playwright/test';
 import path from 'node:path';
 import {readFile} from 'node:fs/promises';
 const directory=process.env.FRAME_FIXTURES;
-for(const name of ['sample.ARW','sample.heic']){
+const fixtureNames=(process.env.FRAME_FIXTURE_NAMES??'sample.ARW,sample.heic').split(',').map(name=>name.trim()).filter(Boolean);
+for(const name of fixtureNames){
  test(`develops actual ${name} pixels in the production build`,async({page})=>{
   test.setTimeout(150000);
   test.skip(!directory,'Set FRAME_FIXTURES to your local authorized samples directory.');

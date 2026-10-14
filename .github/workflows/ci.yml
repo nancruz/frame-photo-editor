@@ -18,11 +18,15 @@ jobs:
       - name: Fetch upstream smoke samples (not redistributed)
         run: |
           mkdir -p /tmp/frame-fixtures
-          curl --fail --location --retry 2 -o /tmp/frame-fixtures/sample.ARW https://raw.githubusercontent.com/ybouane/LibRaw-Wasm/main/example-sony.ARW
-          curl --fail --location --retry 2 -o /tmp/frame-fixtures/sample.heic https://raw.githubusercontent.com/strukturag/libheif/master/examples/example.heic
+          curl --fail --location --retry 2 -o /tmp/frame-fixtures/sample.ARW https://raw.githubusercontent.com/ybouane/LibRaw-Wasm/078bdd49c10f62725b460f5594bc3141a82a9579/example-sony.ARW
+          curl --fail --location --retry 2 -o /tmp/frame-fixtures/sample.heic https://raw.githubusercontent.com/strukturag/libheif/f223c23c5863cd9e7f29c48438c4da3b308a17aa/examples/example.heic
+          curl --fail --location --retry 2 -o /tmp/frame-fixtures/canon-400d.CR2 https://raw.githubusercontent.com/f-spot/raw-samples/54425e2cd53ec17d5fd88ee3277d03f54bf1fe84/CR2/sample_canon_400d1.cr2
+          curl --fail --location --retry 2 -o /tmp/frame-fixtures/nikon-d90.NEF https://raw.githubusercontent.com/f-spot/raw-samples/54425e2cd53ec17d5fd88ee3277d03f54bf1fe84/NEF/RAW_NIKON_D90.NEF
+          curl --fail --location --retry 2 -o /tmp/frame-fixtures/leica-m8.DNG https://raw.githubusercontent.com/f-spot/raw-samples/54425e2cd53ec17d5fd88ee3277d03f54bf1fe84/DNG/RAW_LEICA_M8.DNG
       - run: npm run test:browser
         env:
           FRAME_FIXTURES: /tmp/frame-fixtures
+          FRAME_FIXTURE_NAMES: sample.ARW,sample.heic,canon-400d.CR2,nikon-d90.NEF,leica-m8.DNG
       - name: Save browser inspection screenshots
         if: always()
         uses: actions/upload-artifact@v4

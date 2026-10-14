@@ -3,7 +3,7 @@
 Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Update this document after every meaningful milestone. Never check a task off without a test or inspection result.
 
 ## Phase 0 — Feasibility and camera matrix (next priority)
-- [ ] Collect redistribution-safe JPEG/PNG/WebP/HEIC/DNG/CR2/CR3/NEF/ARW/RAF fixtures, 12–45 MP, multiple camera models.
+- [ ] Collect redistribution-safe JPEG/PNG/WebP/HEIC/DNG/CR2/CR3/NEF/ARW/RAF fixtures, 12–45 MP, multiple camera models. CI now pins external ARW/HEIC/CR2/NEF/DNG samples without redistributing them; CR3, RAF, modern high-resolution cameras and explicit redistribution clearance remain open.
 - [x] Detect file signatures, EXIF orientation, ICC presence and bounded TIFF camera make/model; reject unknown, malformed and oversized raster inputs with typed errors. Synthetic orientation export round-trip and metadata bounds tests pass.
 - [ ] Test HEIC native browser decoding and a licensed WASM fallback on iOS, Android, desktop.
 - [x] Prototype LibRaw WASM in worker; decode actual RAW pixels, not only embedded previews. (Sony ARW production-browser import passed in Chromium CI; broader camera matrix remains open.)
@@ -106,3 +106,8 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 - Added full-size 192 and 512 px PWA icons and precached them with the application shell. Browser tests verify the manifest, cached icon and offline launch without persisted photo data.
 - A production-browser test forces `WEBGL_lose_context`, observes the interruption, restores the context and verifies the retained preview pixels.
 - Verification: 39 unit tests, production build and 15 Chromium browser tests passed: https://github.com/nancruz/frame-photo-editor/actions/runs/38525022704 .
+
+## Camera-matrix expansion (2026-10-14)
+- Pinned every CI fixture to an immutable upstream commit and made the production-browser decoder suite accept an explicit fixture list.
+- Added real Canon 400D CR2, Nikon D90 NEF and Leica M8 DNG import/develop checks alongside the existing Sony ARW and HEIC samples.
+- No sample bytes are redistributed. The f-spot source's non-specific “Creative Common License” wording is recorded as insufficient for clearance; CR3, RAF and modern 12–45 MP camera coverage remain open.

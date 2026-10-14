@@ -11,9 +11,12 @@ This is an experimental local editor, not a validated camera RAW replacement. Br
 | WebP | Native browser decoder | Signature tests; real-image compatibility pending |
 | HEIC | Native attempt, then libheif worker | One upstream HEIC sample in Chromium; native iOS path and profile handling pending |
 | Sony ARW | LibRaw worker, 16-bit linear development | One upstream Sony sample; does not certify other Sony models |
-| DNG / CR2 / CR3 / NEF / RAF | Signature dispatch to LibRaw | No validated camera matrix yet; malformed DNG rejection tested |
+| Canon CR2 | LibRaw worker, 16-bit linear development | One upstream Canon 400D sample in desktop Chromium |
+| Nikon NEF | LibRaw worker, 16-bit linear development | One upstream Nikon D90 sample in desktop Chromium |
+| Leica DNG | LibRaw worker, 16-bit linear development | One upstream Leica M8 sample in desktop Chromium; malformed DNG rejection also tested |
+| CR3 / RAF | Signature dispatch to LibRaw | No real-file fixture validated yet |
 
-No sample files are bundled or redistributed. See DECODERS.md for upstream smoke sources and licensing work required before public distribution.
+No sample files are bundled or redistributed. CI pins exact upstream commits, and DECODERS.md records source blobs plus the unresolved license wording.
 
 ## Browser requirements
 
