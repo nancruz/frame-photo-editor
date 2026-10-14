@@ -45,8 +45,16 @@ test('normalizes EXIF orientation exactly once in preview and export',async({pag
 test('mobile tools collapse and image zoom works',async({page})=>{
  await page.setViewportSize({width:390,height:844});await photo(page);await page.getByRole('button',{name:'Zoom in'}).click();await expect(page.locator('.zoom-controls')).toContainText('125%');await page.getByRole('button',{name:'Fit',exact:true}).click();await page.getByRole('button',{name:/Adjustments/}).click();await expect(page.locator('.sidebar')).toHaveClass(/collapsed/);await page.screenshot({path:'test-results/editor-mobile.png'});
 });
+test('touch pinch and pan update the mobile viewport',async({page,context})=>{
+ await page.setViewportSize({width:390,height:844});await photo(page);const box=await page.locator('.image-stage').boundingBox();expect(box).not.toBeNull();const x=box!.x+box!.width/2,y=box!.y+box!.height/2,client=await context.newCDPSession(page);
+ await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x-30,y},{x:x+30,y}]});await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x-70,y},{x:x+70,y}]});await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await expect.poll(async()=>Number((await page.locator('.zoom-controls span').textContent())?.replace('%',''))).toBeGreaterThan(100);
+ await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+35,y:y+20}]});await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await expect.poll(()=>page.locator('.image-stage canvas').getAttribute('style')).not.toContain('translate(0px, 0px)');
+});
 test('editing tabs expose keyboard tab semantics',async({page})=>{
  await photo(page);const light=page.getByRole('tab',{name:'Light'});await light.focus();await light.press('ArrowRight');const color=page.getByRole('tab',{name:'Color'});await expect(color).toBeFocused();await expect(color).toHaveAttribute('aria-selected','true');await expect(page.getByRole('tabpanel')).toHaveAttribute('aria-labelledby','tool-tab-color');await color.press('End');await expect(page.getByRole('tab',{name:'Presets'})).toBeFocused();
+ const compare=page.getByRole('button',{name:'Hold to compare'});await compare.focus();await page.keyboard.down('Space');await expect(compare).toHaveAttribute('aria-pressed','true');await page.keyboard.up('Space');await expect(compare).toHaveAttribute('aria-pressed','false');
 });
 test('cached app reopens offline without persisting a photo',async({page,context})=>{
  await photo(page);const manifest=await page.evaluate(async()=>await (await fetch('/manifest.webmanifest')).json());expect(manifest.display).toBe('standalone');expect(manifest.icons.map((icon:{sizes:string})=>icon.sizes)).toEqual(expect.arrayContaining(['192x192','512x512']));
