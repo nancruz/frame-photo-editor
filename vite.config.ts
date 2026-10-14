@@ -2,7 +2,7 @@ import {defineConfig,type Plugin} from 'vite';
 import react from '@vitejs/plugin-react';
 const headers={'Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'require-corp'};
 function offlineShell():Plugin{return {name:'frame-offline-shell',apply:'build',generateBundle(_options,bundle){
- const assets=['/','/index.html','/manifest.webmanifest','/icon.svg',...Object.keys(bundle).filter(path=>path.startsWith('assets/')).map(path=>'/'+path)];
+ const assets=['/','/index.html','/manifest.webmanifest','/icon.svg','/icon-192.png','/icon-512.png',...Object.keys(bundle).filter(path=>path.startsWith('assets/')).map(path=>'/'+path)];
  const version='frame-'+Date.now();
  this.emitFile({type:'asset',fileName:'sw.js',source:`const CACHE=${JSON.stringify(version)},ASSETS=${JSON.stringify(assets)};
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS))));

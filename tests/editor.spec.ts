@@ -45,8 +45,22 @@ test('normalizes EXIF orientation exactly once in preview and export',async({pag
 test('mobile tools collapse and image zoom works',async({page})=>{
  await page.setViewportSize({width:390,height:844});await photo(page);await page.getByRole('button',{name:'Zoom in'}).click();await expect(page.locator('.zoom-controls')).toContainText('125%');await page.getByRole('button',{name:'Fit',exact:true}).click();await page.getByRole('button',{name:/Adjustments/}).click();await expect(page.locator('.sidebar')).toHaveClass(/collapsed/);await page.screenshot({path:'test-results/editor-mobile.png'});
 });
+test('editing tabs expose keyboard tab semantics',async({page})=>{
+ await photo(page);const light=page.getByRole('tab',{name:'Light'});await light.focus();await light.press('ArrowRight');const color=page.getByRole('tab',{name:'Color'});await expect(color).toBeFocused();await expect(color).toHaveAttribute('aria-selected','true');await expect(page.getByRole('tabpanel')).toHaveAttribute('aria-labelledby','tool-tab-color');await color.press('End');await expect(page.getByRole('tab',{name:'Presets'})).toBeFocused();
+});
 test('cached app reopens offline without persisting a photo',async({page,context})=>{
- await photo(page);await expect.poll(()=>page.evaluate(async()=>!!(await navigator.serviceWorker.getRegistration())?.active),{timeout:20000}).toBe(true);await page.reload();await context.setOffline(true);await page.reload();await expect(page.getByRole('heading',{name:'Your photos, your vision.'})).toBeVisible();await expect(page.locator('.image-footer')).toHaveCount(0);
+ await photo(page);const manifest=await page.evaluate(async()=>await (await fetch('/manifest.webmanifest')).json());expect(manifest.display).toBe('standalone');expect(manifest.icons.map((icon:{sizes:string})=>icon.sizes)).toEqual(expect.arrayContaining(['192x192','512x512']));
+ await expect.poll(()=>page.evaluate(async()=>!!(await navigator.serviceWorker.getRegistration())?.active),{timeout:20000}).toBe(true);await page.reload();await expect.poll(()=>page.evaluate(async()=>{for(const name of await caches.keys()){const cache=await caches.open(name);if(await cache.match('/icon-192.png'))return true;}return false;})).toBe(true);
+ await context.setOffline(true);await page.reload();await expect(page.getByRole('heading',{name:'Your photos, your vision.'})).toBeVisible();await expect(page.locator('.image-footer')).toHaveCount(0);
+});
+
+test('preview recovers from a WebGL context loss',async({page})=>{
+ await page.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;Object.defineProperty(HTMLCanvasElement.prototype,'getContext',{configurable:true,value:function(this:HTMLCanvasElement,type:string,...args:unknown[]){const context=(original as (...values:unknown[])=>unknown).call(this,type,...args);if(type==='webgl2')(window as unknown as {__frameGpu:unknown}).__frameGpu=context;return context;}});});
+ await photo(page);expect(await pixel(page)).toEqual([128,64,32,255]);
+ const supported=await page.evaluate(()=>{const gl=(window as unknown as {__frameGpu:WebGL2RenderingContext}).__frameGpu,extension=gl.getExtension('WEBGL_lose_context');extension?.loseContext();return !!extension;});test.skip(!supported,'WEBGL_lose_context unavailable');
+ await expect(page.getByRole('alert')).toContainText('Graphics context interrupted');
+ await page.evaluate(()=>{const gl=(window as unknown as {__frameGpu:WebGL2RenderingContext}).__frameGpu;gl.getExtension('WEBGL_lose_context')?.restoreContext();});
+ await expect(page.getByRole('alert')).toHaveCount(0);await expect.poll(()=>pixel(page)).toEqual([128,64,32,255]);
 });
 
 test('repeated 45 MP PNG export completes from the original',async({page})=>{
