@@ -15,10 +15,10 @@ async function orientedJpeg(page:Page){
 test('neutral rendering, grouped history, HSL, curve and geometry controls',async({page})=>{
  await photo(page);expect(await pixel(page)).toEqual([128,64,32,255]);
  const exposure=page.getByRole('slider',{name:'Exposure (EV)'});await exposure.focus();await exposure.press('ArrowRight');await expect(exposure).toHaveValue('0.05');await page.getByRole('button',{name:'Undo',exact:true}).click();await expect(exposure).toHaveValue('0');
- await page.getByRole('button',{name:'Color',exact:true}).click();const saturation=page.getByRole('slider',{name:'Saturation',exact:true});await saturation.fill('-100');await saturation.blur();await expect.poll(async()=>{const [r,g,b]=await pixel(page);return Math.max(r,g,b)-Math.min(r,g,b);}).toBeLessThanOrEqual(1);
- await page.getByRole('button',{name:'Reset adjustments'}).click();await page.getByRole('button',{name:'HSL',exact:true}).click();await page.getByRole('slider',{name:'Red hue'}).fill('30');await page.getByRole('slider',{name:'Red hue'}).blur();
- await page.getByRole('button',{name:'Curve',exact:true}).click();await expect(page.getByRole('img',{name:'Tone curve'})).toBeVisible();
- await page.getByRole('button',{name:'Crop',exact:true}).click();await page.getByRole('button',{name:'Rotate 90°'}).click();await expect.poll(()=>page.locator('.image-stage canvas').evaluate((c:HTMLCanvasElement)=>[c.width,c.height])).toEqual([64,128]);
+ await page.getByRole('tab',{name:'Color',exact:true}).click();const saturation=page.getByRole('slider',{name:'Saturation',exact:true});await saturation.fill('-100');await saturation.blur();await expect.poll(async()=>{const [r,g,b]=await pixel(page);return Math.max(r,g,b)-Math.min(r,g,b);}).toBeLessThanOrEqual(1);
+ await page.getByRole('button',{name:'Reset adjustments'}).click();await page.getByRole('tab',{name:'HSL',exact:true}).click();await page.getByRole('slider',{name:'Red hue'}).fill('30');await page.getByRole('slider',{name:'Red hue'}).blur();
+ await page.getByRole('tab',{name:'Curve',exact:true}).click();await expect(page.getByRole('img',{name:'Tone curve'})).toBeVisible();
+ await page.getByRole('tab',{name:'Crop',exact:true}).click();await page.getByRole('button',{name:'Rotate 90°'}).click();await expect.poll(()=>page.locator('.image-stage canvas').evaluate((c:HTMLCanvasElement)=>[c.width,c.height])).toEqual([64,128]);
  await page.screenshot({path:'test-results/editor-desktop.png'});
 });
 test('PNG tiled export has original dimensions and no neutral tile/strip seams',async({page})=>{
@@ -31,7 +31,7 @@ test('PNG tiled export has original dimensions and no neutral tile/strip seams',
  await expect(page.getByRole('alert')).toHaveCount(0);
 });
 test('crop and quarter rotation export correct dimensions',async({page})=>{
- await photo(page);await page.getByRole('button',{name:'Crop',exact:true}).click();await page.getByRole('slider',{name:'Crop width (%)'}).fill('50');await page.getByRole('slider',{name:'Crop width (%)'}).blur();await page.getByRole('button',{name:'Rotate 90°'}).click();
+ await photo(page);await page.getByRole('tab',{name:'Crop',exact:true}).click();await page.getByRole('slider',{name:'Crop width (%)'}).fill('50');await page.getByRole('slider',{name:'Crop width (%)'}).blur();await page.getByRole('button',{name:'Rotate 90°'}).click();
  await page.getByRole('button',{name:'Export',exact:true}).click();await page.getByRole('combobox',{name:'Export format',exact:true}).selectOption('image/png');const pending=page.waitForEvent('download',{timeout:25000});await page.getByRole('button',{name:'Download image'}).click();const file=await pending;await page.locator('input[type=file]').first().setInputFiles((await file.path())!);await expect(page.locator('.image-footer')).toContainText('64 × 64');
 });
 test('normalizes EXIF orientation exactly once in preview and export',async({page})=>{
@@ -65,9 +65,9 @@ test('cached app reopens offline without persisting a photo',async({page,context
 test('preview recovers from a WebGL context loss',async({page})=>{
  await page.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;Object.defineProperty(HTMLCanvasElement.prototype,'getContext',{configurable:true,value:function(this:HTMLCanvasElement,type:string,...args:unknown[]){const context=(original as (...values:unknown[])=>unknown).call(this,type,...args);if(type==='webgl2')(window as unknown as {__frameGpu:unknown}).__frameGpu=context;return context;}});});
  await photo(page);expect(await pixel(page)).toEqual([128,64,32,255]);
- const supported=await page.evaluate(()=>{const gl=(window as unknown as {__frameGpu:WebGL2RenderingContext}).__frameGpu,extension=gl.getExtension('WEBGL_lose_context');extension?.loseContext();return !!extension;});test.skip(!supported,'WEBGL_lose_context unavailable');
+ const supported=await page.evaluate(()=>{const state=window as unknown as {__frameGpu:WebGL2RenderingContext;__frameLose:WEBGL_lose_context},extension=state.__frameGpu.getExtension('WEBGL_lose_context');if(extension){state.__frameLose=extension;extension.loseContext();}return !!extension;});test.skip(!supported,'WEBGL_lose_context unavailable');
  await expect(page.getByRole('alert')).toContainText('Graphics context interrupted');
- await page.evaluate(()=>{const gl=(window as unknown as {__frameGpu:WebGL2RenderingContext}).__frameGpu;gl.getExtension('WEBGL_lose_context')?.restoreContext();});
+ await page.evaluate(()=>(window as unknown as {__frameLose:WEBGL_lose_context}).__frameLose.restoreContext());
  await expect(page.getByRole('alert')).toHaveCount(0);await expect.poll(()=>pixel(page)).toEqual([128,64,32,255]);
 });
 
