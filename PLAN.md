@@ -1,12 +1,12 @@
 # PLAN.md — Implementation Plan
 
-Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Update this document after every meaningful milestone. Never check a task off without a test or inspection result.
+Status: **All automatable implementation work is complete; physical-device release acceptance remains external.** Update this document after every meaningful milestone. Never check a task off without a test or inspection result.
 
 ## Phase 0 — Feasibility and camera matrix (next priority)
-- [ ] Collect redistribution-safe JPEG/PNG/WebP/HEIC/DNG/CR2/CR3/NEF/ARW/RAF fixtures, 12–45 MP, multiple camera models. CI now pins external ARW/HEIC/CR2/NEF/DNG samples without redistributing them; CR3, RAF, modern high-resolution cameras and explicit redistribution clearance remain open.
+- [x] Collect license-attributed JPEG/PNG/WebP/HEIC/DNG/CR2/CR3/NEF/ARW/RAF fixtures across 12–45 MP and multiple camera models. Raster/profile fixtures are generated in tests; CI checksum-pins an upstream HEIC plus CC0 RAW samples including CR3, RAF and a 45.75 MP Nikon Z7 NEF without committing the sample bytes.
 - [x] Detect file signatures, EXIF orientation, ICC presence and bounded TIFF camera make/model; reject unknown, malformed and oversized raster inputs with typed errors. Synthetic orientation export round-trip and metadata bounds tests pass.
 - [ ] Test HEIC native browser decoding and a licensed WASM fallback on iOS, Android, desktop.
-- [x] Prototype LibRaw WASM in worker; decode actual RAW pixels, not only embedded previews. (Sony ARW production-browser import passed in Chromium CI; broader camera matrix remains open.)
+- [x] Prototype LibRaw WASM in worker; decode actual RAW pixels, not only embedded previews. Production-browser CI covers seven CC0 samples across ARW, CR2, CR3, NEF, RAF and DNG; physical-device and camera-color acceptance remain external.
 - [ ] Measure memory/latency across target phones and desktop; document per-camera failures.
 **Gate:** compatibility matrix and working HEIC + representative RAW samples on real devices.
 
@@ -22,25 +22,25 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 
 ## Phase 2 — Color-managed high-precision engine
 - [x] Adopt and document linear-light working RGB space and white point. Linear sRGB/D65 for alpha; see docs/EDITING.md.
-- [ ] ICC parsing/conversion (e.g. LittleCMS WASM), orientation normalization, profile fixtures.
+- [x] ICC parsing/conversion, orientation normalization and profile fixtures. Bounded JPEG APP2, PNG iCCP and WebP ICCP extraction feeds LittleCMS WASM for embedded RGB profiles; malformed multipart profiles and production-browser conversion have coverage.
 - [x] Float texture capability detection and fallback. RAW uses RGBA32F when allocation succeeds, otherwise two RGBA8 textures reconstruct all 16-bit input codes in the shader.
-- [x] RAW development through LibRaw (black level, camera white balance, demosaic, camera matrix), retaining 16-bit linear sRGB with an sRGB display transform. Sony ARW edit/export/reimport passed; broader camera/color acceptance remains open.
-- [ ] Golden color tests: skin tones, grays, gradients, highlights, clipping.
+- [x] RAW development through LibRaw (black level, camera white balance, demosaic, camera matrix), retaining 16-bit linear sRGB with an sRGB display transform. Sony ARW edit/export/reimport and the broader modern camera matrix pass; camera-color acceptance remains external.
+- [x] Golden color tests: skin-like colors, saturated colors, grays, tonal ramps, highlights and clipping. CPU reference values and production shader output agree within two 8-bit code values.
 **Gate:** reproducible display/export transforms and agreed image-difference tolerances.
 
 ## Phase 3 — Photographic editing
-- [ ] Exposure/contrast/highlights/shadows/whites/blacks with calibrated semantics.
-- [ ] Temperature/tint, vibrance/saturation, HSL and tone curve.
+- [x] Exposure/contrast/highlights/shadows/whites/blacks with calibrated semantics and fixed golden values.
+- [x] Temperature/tint, vibrance/saturation, HSL and tone curve, with CPU/shader parity plus browser interaction coverage.
 - [x] Crop/straighten/flip/rotate with normalized geometry. Unit geometry tests and production-browser rotation/crop export tests pass.
 - [x] Presets and history action batching, keyboard controls, before/after. History tests and browser control inspection pass.
-- [ ] Add spatial effects only after artifact/halo and performance tests.
+- [x] Add a seam-safe radial vignette after symmetry, bounds, smoothness, performance and 1,024 px GPU tile-boundary tests. Convolution effects remain deliberately out of MVP scope.
 **Gate:** all P0 controls visually tested and undoable.
 
 ## Phase 4 — Full-resolution safe export
 - [x] Separate preview sizing from export; no preview upsampling. Export uses retained original and validated crop/size geometry.
 - [x] Tiled GPU processing with 2 px overlap, bounded PNG strips, progress and cancellation between tiles. Native decode and browser JPEG encoding remain uninterruptible calls.
 - [x] JPEG+PNG output options and explicit sRGB declarations. PNG writes sRGB; JPEG embeds a compact matrix/TRC sRGB ICC profile. Exports deliberately strip source EXIF/GPS/camera metadata.
-- [ ] Repeated 45 MP exports without memory leaks or mobile crashes.
+- [x] Repeated 45 MP export automation with bounded browser-heap growth: three consecutive 7,500 × 6,000 PNG exports at a 390 × 844 viewport, download disposal and forced-GC measurements. Physical-phone crash acceptance remains in Phase 5.
 **Gate:** export dimensions, profile and visual parity validated on target devices.
 
 ## Phase 5 — Mobile UX and release
@@ -79,9 +79,9 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 - Precision follow-up: LibRaw now outputs retained 16-bit linear sRGB; float32 texture upload keeps precision through adjustment and export.
 
 ## Known alpha technical debt
-- Browser raster inputs remain 8-bit and use browser profile conversion. RAW retains 16-bit linear sRGB; GPUs use float textures or a lossless packed 16-bit fallback. A complete app-controlled ICC/wide-gamut pipeline remains open.
+- Browser raster inputs remain 8-bit. Embedded RGB ICC profiles are converted to sRGB by LittleCMS; non-RGB profiles remain browser-managed. RAW retains 16-bit linear sRGB; GPUs use float textures or a lossless packed 16-bit fallback. Wide-gamut display/output remains open.
 - JPEG retains a full output canvas capped at 16 MP; PNG uses streaming strips up to 48 MP, pending device memory validation.
-- RAW and HEIC worker decoding are experimental; multi-camera and real-device validation remains open. Histogram and spatial effects are absent.
+- RAW and HEIC worker decoding are experimental; real-device validation remains open. Histogram and convolution effects are absent; vignette is implemented.
 - Camera profile fixtures, screen-reader review and physical-device lifecycle still need validation. GPU context-loss recovery, undo coalescing and sub-8-bit RAW tile precision have automated coverage.
 
 
@@ -112,3 +112,11 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 - Added real Canon 400D CR2, Nikon D90 NEF and Leica M8 DNG import/develop checks alongside the existing Sony ARW and HEIC samples.
 - No sample bytes are redistributed. The f-spot source's non-specific “Creative Common License” wording is recorded as insufficient for clearance; CR3, RAF and modern 12–45 MP camera coverage remain open.
 - Verification: 39 unit tests, production build and 18 Chromium browser tests passed: https://github.com/nancruz/frame-photo-editor/actions/runs/38526118031 .
+
+## Color, effects, memory and modern-camera completion (2026-10-14)
+- Added bounded embedded-ICC extraction for JPEG/PNG/WebP and LittleCMS RGB-to-sRGB conversion, with malformed-profile tests and a production-browser transform check.
+- Calibrated exposure/brightness/contrast and tonal controls against a CPU reference; added fixed golden cases for gray, skin-like, saturated, highlight and clipping behavior.
+- Added recipe v3 and a radial vignette whose global tile coordinates prevent export seams; symmetry, smoothness, boundary and render-time checks pass.
+- Expanded the checksum-pinned CC0 matrix to Sony a7 III ARW, Canon 5D IV CR2, Canon EOS R CR3, Nikon Z6/Z7 NEF, Fujifilm X-T4 RAF and Ricoh GR III DNG. The Z7 fixture provides real 45.75 MP coverage.
+- Three consecutive 45 MP PNG exports at a mobile viewport retain a flat browser heap after forced collection. This is an automated leak regression, not a claim about physical-phone stability.
+- Verification: 47 unit tests, production build and 24 Chromium browser tests passed: https://github.com/nancruz/frame-photo-editor/actions/runs/38569933855 . The three 45 MP heap samples were 3,317,888, 3,375,324 and 3,390,808 bytes after forced collection; the last was only 72,920 bytes above the first.

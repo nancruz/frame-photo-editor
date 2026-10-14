@@ -12,11 +12,11 @@ This is an experimental local editor, not a validated camera RAW replacement. Br
 | HEIC | Native attempt, then libheif worker | One upstream HEIC sample in Chromium; native iOS path and profile handling pending |
 | Sony ARW | LibRaw worker, 16-bit linear development | CC0 Sony a7 III sample in the production-browser matrix |
 | Canon CR2 / CR3 | LibRaw worker, 16-bit linear development | CC0 Canon 5D Mark IV and EOS R samples in the matrix |
-| Nikon NEF | LibRaw worker, 16-bit linear development | CC0 Nikon Z 6 sample in the matrix |
+| Nikon NEF | LibRaw worker, 16-bit linear development | CC0 Nikon Z 6 and 45.75 MP Z 7 samples in the matrix |
 | Fujifilm RAF | LibRaw worker, 16-bit linear development | CC0 Fujifilm X-T4 compressed sample in the matrix |
 | DNG | LibRaw worker, 16-bit linear development | CC0 Ricoh GR III sample plus malformed-DNG rejection |
 
-No camera samples are bundled. CI verifies raw.pixls.us CC0 samples against published SHA-256 hashes; DECODERS.md records the exact sources and checksums.
+No camera samples are bundled. CI verifies seven raw.pixls.us CC0 samples and the immutable upstream HEIC sample against published/pinned SHA-256 hashes; DECODERS.md records the exact sources and checksums.
 
 ## Browser requirements
 
