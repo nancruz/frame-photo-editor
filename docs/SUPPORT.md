@@ -17,12 +17,12 @@ No sample files are bundled or redistributed. See DECODERS.md for upstream smoke
 
 ## Browser requirements
 
-WebGL 2 is required for editing. RAW additionally requires SharedArrayBuffer and cross-origin isolation; preserve the configured COOP/COEP hosting headers. PNG export requires CompressionStream. Offline installation, native HEIC and file sharing depend on the browser. Missing requirements produce an error; there is no CPU renderer fallback.
+WebGL 2 is required for editing. RAW additionally requires SharedArrayBuffer and cross-origin isolation; preserve the configured COOP/COEP hosting headers. PNG export requires CompressionStream. Offline installation, native HEIC and file sharing depend on the browser. The manifest includes 192/512 maskable PNG icons and standalone display mode. Missing requirements produce an error; there is no CPU renderer fallback.
 
 | Environment | Current evidence |
 | --- | --- |
 | Desktop Chromium, software GPU, CI | Automated editing/import/export/offline suite |
-| Mobile Chromium viewport, CI | Layout screenshot and controls test only |
+| Mobile Chromium viewport, CI | Layout, real multi-touch pinch/pan, 44 px controls and offline shell tests |
 | Physical Android Chrome | Not validated |
 | Physical iOS Safari / installed mode | Not validated |
 | Desktop Safari / Firefox | Not validated |

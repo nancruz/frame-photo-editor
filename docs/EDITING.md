@@ -46,3 +46,9 @@ CI evidence: https://github.com/nancruz/frame-photo-editor/actions/runs/38466113
 ## Precision fallback and orientation evidence
 
 CI run https://github.com/nancruz/frame-photo-editor/actions/runs/38469141049 passed 36 unit tests, build and 12 Chromium browser tests. It covers EXIF orientation-6 normalization through preview and PNG export, explicit ICC presence in an edited Sony RAW JPEG export, and rejection of a 60 MP PNG header before native decode. The packed fallback has exact code-value unit coverage; exercising the fallback on additional physical GPUs remains part of device acceptance.
+
+## Mobile interaction and recovery evidence
+
+Pinch scaling is anchored around the live gesture midpoint and includes midpoint translation, with scale limited to 1–8×. Pointer cancellation and lost capture remove stale contacts. The mobile slider hit area is 44 px. Editing categories use tab/tabpanel semantics and roving keyboard focus.
+
+CI run https://github.com/nancruz/frame-photo-editor/actions/runs/38525022704 passed 39 unit tests, build and 15 production Chromium tests. It sends multi-touch input through Chromium, checks keyboard tabs and hold-to-compare, validates manifest icons and offline cache behavior, and forces then restores a WebGL context loss. Physical touch accuracy, screen readers, installed mode and native share sheets still require reference-device testing.

@@ -45,9 +45,10 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 
 ## Phase 5 — Mobile UX and release
 - [x] Mobile collapsible bottom editor; image-first space allocation. 390 × 844 screenshot inspected; real-device gate remains open.
-- [ ] Accurate touch sliders, pinch/zoom/pan and hold-to-compare.
-- [ ] PWA/offline caching, installed mode, share sheet where supported.
-- [ ] Accessibility, GPU context recovery, resilience, real-device regression.
+- [x] Touch-sized sliders, center-aware pinch/zoom/pan and hold-to-compare. Chromium receives real multi-touch input in CI; physical-device acceptance remains open.
+- [x] Installable PWA manifest with 192/512 maskable icons, offline application-shell caching and conditional share sheet. Offline cache contents pass browser tests; installed-device behavior remains an acceptance check.
+- [x] Keyboard tab semantics, visible focus, live status/error roles and GPU context recovery. Browser tests force a real WebGL loss and verify the retained image is restored.
+- [ ] Physical iOS/Android regression, screen-reader review and installed share-sheet validation.
 - [x] Browser/device/camera support documentation and honest alpha release notes. docs/SUPPORT.md distinguishes implemented paths, tested fixtures and unvalidated devices. Beta release gate remains open.
 **Gate:** end-to-end smartphone and RAW workflows pass reference devices.
 
@@ -81,7 +82,7 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 - Browser raster inputs remain 8-bit and use browser profile conversion. RAW retains 16-bit linear sRGB; GPUs use float textures or a lossless packed 16-bit fallback. A complete app-controlled ICC/wide-gamut pipeline remains open.
 - JPEG retains a full output canvas capped at 16 MP; PNG uses streaming strips up to 48 MP, pending device memory validation.
 - RAW and HEIC worker decoding are experimental; multi-camera and real-device validation remains open. Histogram and spatial effects are absent.
-- GPU context-loss recovery, camera orientation/profile fixtures and physical-device lifecycle still need validation. Undo coalescing and sub-8-bit RAW tile precision have unit coverage.
+- Camera profile fixtures, screen-reader review and physical-device lifecycle still need validation. GPU context-loss recovery, undo coalescing and sub-8-bit RAW tile precision have automated coverage.
 
 
 ## RAW precision verification (2026-10-13)
@@ -98,3 +99,10 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 - JPEG exports now embed an explicit sRGB ICC profile; the real Sony RAW export smoke test verifies the marker before reimport.
 - CI verification: 36 unit tests, production build and 12 Chromium browser tests passed: https://github.com/nancruz/frame-photo-editor/actions/runs/38469141049 . A further bounded TIFF make/model test brings the local unit count to 37.
 - Physical browser/device profile conversion and camera fidelity remain acceptance gates.
+
+## Mobile, PWA and recovery milestone (2026-10-14)
+- Pinch zoom now stays anchored to the gesture center, follows two-finger movement and clears stale pointers when capture is lost. Mobile range inputs use a 44 px touch target.
+- Editing tools implement tablist/tabpanel semantics, roving keyboard focus and Home/End/arrow navigation; keyboard hold-to-compare is verified.
+- Added full-size 192 and 512 px PWA icons and precached them with the application shell. Browser tests verify the manifest, cached icon and offline launch without persisted photo data.
+- A production-browser test forces `WEBGL_lose_context`, observes the interruption, restores the context and verifies the retained preview pixels.
+- Verification: 39 unit tests, production build and 15 Chromium browser tests passed: https://github.com/nancruz/frame-photo-editor/actions/runs/38525022704 .
