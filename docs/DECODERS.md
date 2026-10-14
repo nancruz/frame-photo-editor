@@ -22,6 +22,8 @@ CI downloads, but never commits or redistributes, these exact upstream files:
 
 The f-spot repository describes its files only as “CCL (Creative Common License)” without naming a specific Creative Commons license. That is insufficient for a redistribution decision. All five fixtures therefore remain external test inputs; no sample bytes are included in this repository.
 
+The 2026-10-14 CI run produced these bounded previews on the GitHub-hosted Chromium runner. Times are smoke-test observations, not device benchmarks: Sony ARW 2048 × 1368 in 18.8 s (including edit/export/reimport), HEIC 1280 × 854 in 1.8 s, Canon CR2 2048 × 1364 in 6.0 s, Nikon NEF 2048 × 1363 in 4.9 s and Leica DNG 2048 × 1378 in 3.8 s.
+
 CR3 and RAF samples, modern 12–45 MP cameras, iOS Safari/Android Chrome tests, orientation/profile fixtures, visual comparisons and memory benchmarks remain open. A passing fixture does not imply all cameras sharing its file extension work.
 
 ## Dependencies and distribution
@@ -38,4 +40,4 @@ LibRaw 1.6.0 uses shared WASM memory (initial allocation 256 MiB). Vite dev/prev
 
 ## Verification to date
 
-The initial RAW precision milestone passed 29 unit tests, a production build and 10 Chromium browser tests. The Sony ARW test develops 16-bit linear data, applies exposure, exports JPEG at a 1024-pixel long edge and reimports it. The matrix suite also covers one upstream HEIC plus Canon CR2, Nikon NEF and Leica DNG fixtures in Chromium. Full camera/device compatibility and color fidelity are still unverified. See SUPPORT.md and the CI runs linked in PLAN.md.
+The expanded matrix passed 39 unit tests, a production build and 18 Chromium browser tests in [CI run 38526118031](https://github.com/nancruz/frame-photo-editor/actions/runs/38526118031). The Sony ARW test develops 16-bit linear data, applies exposure, exports JPEG at a 1024-pixel long edge and reimports it. The matrix suite also covers one upstream HEIC plus Canon CR2, Nikon NEF and Leica DNG fixtures in Chromium. Full camera/device compatibility and color fidelity are still unverified. See SUPPORT.md and PLAN.md.

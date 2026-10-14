@@ -111,3 +111,4 @@ Status: **Alpha editing/export implemented; full MVP acceptance incomplete.** Up
 - Pinned every CI fixture to an immutable upstream commit and made the production-browser decoder suite accept an explicit fixture list.
 - Added real Canon 400D CR2, Nikon D90 NEF and Leica M8 DNG import/develop checks alongside the existing Sony ARW and HEIC samples.
 - No sample bytes are redistributed. The f-spot source's non-specific “Creative Common License” wording is recorded as insufficient for clearance; CR3, RAF and modern 12–45 MP camera coverage remain open.
+- Verification: 39 unit tests, production build and 18 Chromium browser tests passed: https://github.com/nancruz/frame-photo-editor/actions/runs/38526118031 .
