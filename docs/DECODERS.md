@@ -8,7 +8,7 @@ Worker lifetime is one decode. Abort, errors and successful completion release t
 
 ## Reproducible smoke tests
 
-Run `npm ci`, `npx playwright install chromium`, `npm run build`, then `FRAME_FIXTURES=/absolute/path npm run test:browser`. By default, supply files named `sample.ARW` and `sample.heic`. Set `FRAME_FIXTURE_NAMES` to a comma-separated list to exercise a larger local matrix. Without `FRAME_FIXTURES`, real-file tests are explicitly skipped. Malformed-RAW and oversized-raster tests always run.
+Run `pnpm install --frozen-lockfile`, `pnpm exec playwright install chromium`, `pnpm run build`, then `FRAME_FIXTURES=/absolute/path pnpm run test:browser`. By default, supply files named `sample.ARW` and `sample.heic`. Set `FRAME_FIXTURE_NAMES` to a comma-separated list to exercise a larger local matrix. Without `FRAME_FIXTURES`, real-file tests are explicitly skipped. Malformed-RAW and oversized-raster tests always run.
 
 CI downloads, but never commits or redistributes, these exact upstream files:
 

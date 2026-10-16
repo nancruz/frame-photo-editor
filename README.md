@@ -4,12 +4,14 @@ Initial browser-based non-destructive photo editor foundation with React, TypeSc
 
 ## Run locally
 
+Use Node.js 22.13 or newer and pnpm 11.25.0 (pinned in `package.json`).
+
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
-Validation: `npm test` and `npm run build`.
+Validation: `pnpm test` and `pnpm run build`.
 
 ## Working in alpha
 - JPEG/PNG/WebP plus experimental HEIC and LibRaw worker imports.
@@ -28,5 +30,5 @@ Validation: `npm test` and `npm run build`.
 - [docs/ROADMAP.md](docs/ROADMAP.md) — original technical roadmap
 
 ## Deployment
-Static Vite build configured for Netlify (`netlify.toml`); no authentication, photo uploads or backend required. Connect the repository in Netlify, use `npm run build`, and publish `dist`. Pull requests and pushes run `npm test` plus `npm run build` in GitHub Actions.
+Static Vite build configured for Netlify (`netlify.toml`); no authentication, photo uploads or backend required. Connect the repository in Netlify, use `pnpm run build`, and publish `dist`. Pull requests and pushes run `pnpm test` plus `pnpm run build` in GitHub Actions.
 

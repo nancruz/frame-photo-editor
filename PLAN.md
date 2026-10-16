@@ -58,7 +58,7 @@ Status: **All automatable implementation work is complete; physical-device relea
 3. Deliver vertical slices (open -> edit -> export), each testable.
 4. For each task: implementation, tests, failure cases, docs update, small commit.
 5. Never silently mark unsupported formats supported or promise color equivalence.
-6. Run npm test and npm run build before merging; report any unavailable checks.
+6. Run pnpm test and pnpm run build before merging; report any unavailable checks.
 7. Keep SPECS.md authoritative for scope; record feature status here.
 
 ## Milestone notes

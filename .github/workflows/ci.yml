@@ -7,14 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm run build
+      - run: pnpm exec playwright install --with-deps chromium
       - name: Fetch upstream smoke samples (not redistributed)
         run: |
           mkdir -p /tmp/frame-fixtures
@@ -30,7 +31,7 @@ jobs:
           download nikon-z7.NEF 'https://raw.pixls.us/getfile.php/2792/nice/Nikon%20-%20Z%207%20-%2012bit%2012bit%20compressed%20%283%3A2%29.NEF' c861546fbcf5826d5eb26d223e2143fa32968e89f7edbc5bb10c283ea5461ded
           download fujifilm-xt4.RAF 'https://raw.pixls.us/getfile.php/3918/nice/Fujifilm%20-%20X-T4%20-%2014bit%2014bit%20compressed%20%283%3A2%29.RAF' 871836938ffa695f4c41765ddb107c2703ce755f7f3ced7e10f9e04746f1734e
           download ricoh-gr3.DNG 'https://raw.pixls.us/getfile.php/3115/nice/Ricoh%20-%20GR%20III%20-%2014bit%20%283%3A2%29.DNG' 05513ee72f7cac4165534c9f64995412084f414a033c80c473c79fd94154292e
-      - run: npm run test:browser
+      - run: pnpm run test:browser
         env:
           FRAME_FIXTURES: /tmp/frame-fixtures
           FRAME_FIXTURE_NAMES: sample.ARW,sample.heic,canon-5d4.CR2,canon-eos-r.CR3,nikon-z6.NEF,nikon-z7.NEF,fujifilm-xt4.RAF,ricoh-gr3.DNG
