@@ -1,26 +1,265 @@
-import {useState} from 'react';
-import {Slider} from './Slider';
-import {useEditor} from '../domain/store';
-import {CHANNELS,PRESETS,RANGE,freshRecipe,type Adjustment,type Geometry} from '../domain/recipe';
-const LABELS:Record<Adjustment,string>={exposure:'Exposure (EV)',contrast:'Contrast',highlights:'Highlights',shadows:'Shadows',whites:'Whites',blacks:'Blacks',warmth:'Temperature',tint:'Tint',vibrance:'Vibrance',saturation:'Saturation',brightness:'Brightness',vignette:'Vignette'};
-const TABS=['Light','Color','HSL','Curve','Effects','Crop','Presets'];
-export function Controls({disabled,width,height}:{disabled:boolean;width:number;height:number}){
- const [tab,setTab]=useState('Light'),[channel,setChannel]=useState(0);const recipe=useEditor(s=>s.recipe),apply=useEditor(s=>s.apply),setAdjustment=useEditor(s=>s.setAdjustment);
- const g=recipe.geometry;const geometry=(patch:Partial<Geometry>)=>apply({...recipe,geometry:{...g,...patch}});
- const keys:Adjustment[]=tab==='Light'?['exposure','contrast','highlights','shadows','whites','blacks','brightness']:['warmth','tint','vibrance','saturation'];
- function ratio(value:string){if(value==='original'){geometry({x:0,y:0,width:1,height:1});return;}let target=Number(value);if(g.rotation%180!==0)target=1/target;const source=width/height;
-  const cw=Math.min(1,target/source),ch=Math.min(1,source/target);geometry({x:(1-cw)/2,y:(1-ch)/2,width:cw,height:ch});}
- function tabKey(e:React.KeyboardEvent<HTMLButtonElement>,index:number){let next=index;if(e.key==='ArrowRight')next=(index+1)%TABS.length;else if(e.key==='ArrowLeft')next=(index+TABS.length-1)%TABS.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=TABS.length-1;else return;e.preventDefault();setTab(TABS[next]);(e.currentTarget.parentElement?.children[next] as HTMLElement)?.focus();}
- return <><nav className="tabs" aria-label="Editing tools" role="tablist">{TABS.map((t,i)=><button key={t} id={`tool-tab-${t.toLowerCase()}`} role="tab" aria-selected={tab===t} aria-controls="tool-panel" tabIndex={tab===t?0:-1} onKeyDown={e=>tabKey(e,i)} onClick={()=>setTab(t)}>{t}</button>)}</nav><fieldset id="tool-panel" role="tabpanel" aria-labelledby={`tool-tab-${tab.toLowerCase()}`} disabled={disabled} className="tool-content">
- {(tab==='Light'||tab==='Color')&&keys.map(key=><Slider key={key} label={LABELS[key]} value={recipe[key]} min={RANGE[key][0]} max={RANGE[key][1]} step={RANGE[key][2]} onChange={v=>setAdjustment(key,v)}/>)}
- {tab==='HSL'&&<><label className="select-label">Color channel<select value={channel} onChange={e=>setChannel(Number(e.target.value))}>{CHANNELS.map((c,i)=><option value={i} key={c}>{c}</option>)}</select></label>{(['hue','saturation','luminance'] as const).map(key=><Slider key={key} label={`${CHANNELS[channel]} ${key}`} min={key==='hue'?-30:-100} max={key==='hue'?30:100} value={recipe.hsl[channel][key]} onChange={value=>apply({...recipe,hsl:recipe.hsl.map((v,i)=>i===channel?{...v,[key]:value}:v)})}/>)}</>}
- {tab==='Curve'&&<><svg className="curve-chart" viewBox="0 0 100 100" role="img" aria-label="Tone curve"><path d="M0 100L100 0" stroke="#666" fill="none"/><polyline points={recipe.curve.map((v,i)=>`${i*25},${100-v*100}`).join(' ')} stroke="#dec39f" strokeWidth="2" fill="none"/></svg>{recipe.curve.map((v,i)=><Slider key={i} label={['Black point','Dark tones','Midtones','Light tones','White point'][i]} min={i===0?0:recipe.curve[i-1]*100} max={i===4?100:recipe.curve[i+1]*100} value={v*100} onChange={value=>apply({...recipe,curve:recipe.curve.map((n,j)=>i===j?value/100:n)})}/>)}</>}
- {tab==='Effects'&&<><Slider label={LABELS.vignette} min={RANGE.vignette[0]} max={RANGE.vignette[1]} value={recipe.vignette} onChange={v=>setAdjustment('vignette',v)}/><p className="footnote">Edge darkening is applied in source coordinates without blur or sharpening halos.</p></>}
- {tab==='Crop'&&<><label className="select-label">Crop ratio<select aria-label="Crop ratio" value="" onChange={e=>ratio(e.target.value)}><option value="" disabled>Choose ratio…</option><option value="original">Original / reset crop</option><option value="1">Square</option><option value="1.5">3:2</option><option value="1.333333333">4:3</option><option value="1.777777778">16:9</option></select></label>
- <div className="button-row"><button onClick={()=>geometry({rotation:(g.rotation+90)%360})}>Rotate 90°</button><button aria-pressed={g.flipX} onClick={()=>geometry({flipX:!g.flipX})}>Flip H</button><button aria-pressed={g.flipY} onClick={()=>geometry({flipY:!g.flipY})}>Flip V</button></div>
- <Slider label="Straighten (degrees)" min={-45} max={45} step={.1} value={g.straighten} onChange={v=>geometry({straighten:v})}/>
- <Slider label="Crop width (%)" min={1} max={100} value={g.width*100} onChange={v=>geometry({width:v/100,x:Math.min(g.x,1-v/100)})}/><Slider label="Crop height (%)" min={1} max={100} value={g.height*100} onChange={v=>geometry({height:v/100,y:Math.min(g.y,1-v/100)})}/>
- <Slider label="Crop left (%)" min={0} max={(1-g.width)*100} value={g.x*100} onChange={v=>geometry({x:v/100})}/><Slider label="Crop top (%)" min={0} max={(1-g.height)*100} value={g.y*100} onChange={v=>geometry({y:v/100})}/></>}
- {tab==='Presets'&&<div className="presets">{Object.entries(PRESETS).map(([name,settings])=><button key={name} onClick={()=>apply({...freshRecipe(),...settings,geometry:recipe.geometry})}>{name}</button>)}</div>}
- </fieldset></>;
+import { useState } from 'react';
+import { Slider } from './Slider';
+import { useEditor } from '../domain/store';
+import {
+  CHANNELS,
+  PRESETS,
+  RANGE,
+  freshRecipe,
+  type Adjustment,
+  type Geometry,
+} from '../domain/recipe';
+const LABELS: Record<Adjustment, string> = {
+  exposure: 'Exposure (EV)',
+  contrast: 'Contrast',
+  highlights: 'Highlights',
+  shadows: 'Shadows',
+  whites: 'Whites',
+  blacks: 'Blacks',
+  warmth: 'Temperature',
+  tint: 'Tint',
+  vibrance: 'Vibrance',
+  saturation: 'Saturation',
+  brightness: 'Brightness',
+  vignette: 'Vignette',
+};
+const TABS = ['Light', 'Color', 'HSL', 'Curve', 'Effects', 'Crop', 'Presets'];
+export function Controls({
+  disabled,
+  width,
+  height,
+}: {
+  disabled: boolean;
+  width: number;
+  height: number;
+}) {
+  const [tab, setTab] = useState('Light'),
+    [channel, setChannel] = useState(0);
+  const recipe = useEditor((s) => s.recipe),
+    apply = useEditor((s) => s.apply),
+    setAdjustment = useEditor((s) => s.setAdjustment);
+  const g = recipe.geometry;
+  const geometry = (patch: Partial<Geometry>) => apply({ ...recipe, geometry: { ...g, ...patch } });
+  const keys: Adjustment[] =
+    tab === 'Light'
+      ? ['exposure', 'contrast', 'highlights', 'shadows', 'whites', 'blacks', 'brightness']
+      : ['warmth', 'tint', 'vibrance', 'saturation'];
+  function ratio(value: string) {
+    if (value === 'original') {
+      geometry({ x: 0, y: 0, width: 1, height: 1 });
+      return;
+    }
+    let target = Number(value);
+    if (g.rotation % 180 !== 0) target = 1 / target;
+    const source = width / height;
+    const cw = Math.min(1, target / source),
+      ch = Math.min(1, source / target);
+    geometry({ x: (1 - cw) / 2, y: (1 - ch) / 2, width: cw, height: ch });
+  }
+  function tabKey(e: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    let next = index;
+    if (e.key === 'ArrowRight') next = (index + 1) % TABS.length;
+    else if (e.key === 'ArrowLeft') next = (index + TABS.length - 1) % TABS.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = TABS.length - 1;
+    else return;
+    e.preventDefault();
+    setTab(TABS[next]);
+    (e.currentTarget.parentElement?.children[next] as HTMLElement)?.focus();
+  }
+  return (
+    <>
+      <nav className="tabs" aria-label="Editing tools" role="tablist">
+        {TABS.map((t, i) => (
+          <button
+            key={t}
+            id={`tool-tab-${t.toLowerCase()}`}
+            role="tab"
+            aria-selected={tab === t}
+            aria-controls="tool-panel"
+            tabIndex={tab === t ? 0 : -1}
+            onKeyDown={(e) => tabKey(e, i)}
+            onClick={() => setTab(t)}
+          >
+            {t}
+          </button>
+        ))}
+      </nav>
+      <fieldset
+        id="tool-panel"
+        role="tabpanel"
+        aria-labelledby={`tool-tab-${tab.toLowerCase()}`}
+        disabled={disabled}
+        className="tool-content"
+      >
+        {(tab === 'Light' || tab === 'Color') &&
+          keys.map((key) => (
+            <Slider
+              key={key}
+              label={LABELS[key]}
+              value={recipe[key]}
+              min={RANGE[key][0]}
+              max={RANGE[key][1]}
+              step={RANGE[key][2]}
+              onChange={(v) => setAdjustment(key, v)}
+            />
+          ))}
+        {tab === 'HSL' && (
+          <>
+            <label className="select-label">
+              Color channel
+              <select value={channel} onChange={(e) => setChannel(Number(e.target.value))}>
+                {CHANNELS.map((c, i) => (
+                  <option value={i} key={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {(['hue', 'saturation', 'luminance'] as const).map((key) => (
+              <Slider
+                key={key}
+                label={`${CHANNELS[channel]} ${key}`}
+                min={key === 'hue' ? -30 : -100}
+                max={key === 'hue' ? 30 : 100}
+                value={recipe.hsl[channel][key]}
+                onChange={(value) =>
+                  apply({
+                    ...recipe,
+                    hsl: recipe.hsl.map((v, i) => (i === channel ? { ...v, [key]: value } : v)),
+                  })
+                }
+              />
+            ))}
+          </>
+        )}
+        {tab === 'Curve' && (
+          <>
+            <svg className="curve-chart" viewBox="0 0 100 100" role="img" aria-label="Tone curve">
+              <path d="M0 100L100 0" stroke="#666" fill="none" />
+              <polyline
+                points={recipe.curve.map((v, i) => `${i * 25},${100 - v * 100}`).join(' ')}
+                stroke="#dec39f"
+                strokeWidth="2"
+                fill="none"
+              />
+            </svg>
+            {recipe.curve.map((v, i) => (
+              <Slider
+                key={i}
+                label={['Black point', 'Dark tones', 'Midtones', 'Light tones', 'White point'][i]}
+                min={i === 0 ? 0 : recipe.curve[i - 1] * 100}
+                max={i === 4 ? 100 : recipe.curve[i + 1] * 100}
+                value={v * 100}
+                onChange={(value) =>
+                  apply({
+                    ...recipe,
+                    curve: recipe.curve.map((n, j) => (i === j ? value / 100 : n)),
+                  })
+                }
+              />
+            ))}
+          </>
+        )}
+        {tab === 'Effects' && (
+          <>
+            <Slider
+              label={LABELS.vignette}
+              min={RANGE.vignette[0]}
+              max={RANGE.vignette[1]}
+              value={recipe.vignette}
+              onChange={(v) => setAdjustment('vignette', v)}
+            />
+            <p className="footnote">
+              Edge darkening is applied in source coordinates without blur or sharpening halos.
+            </p>
+          </>
+        )}
+        {tab === 'Crop' && (
+          <>
+            <label className="select-label">
+              Crop ratio
+              <select aria-label="Crop ratio" value="" onChange={(e) => ratio(e.target.value)}>
+                <option value="" disabled>
+                  Choose ratio…
+                </option>
+                <option value="original">Original / reset crop</option>
+                <option value="1">Square</option>
+                <option value="1.5">3:2</option>
+                <option value="1.333333333">4:3</option>
+                <option value="1.777777778">16:9</option>
+              </select>
+            </label>
+            <div className="button-row">
+              <button onClick={() => geometry({ rotation: (g.rotation + 90) % 360 })}>
+                Rotate 90°
+              </button>
+              <button aria-pressed={g.flipX} onClick={() => geometry({ flipX: !g.flipX })}>
+                Flip H
+              </button>
+              <button aria-pressed={g.flipY} onClick={() => geometry({ flipY: !g.flipY })}>
+                Flip V
+              </button>
+            </div>
+            <Slider
+              label="Straighten (degrees)"
+              min={-45}
+              max={45}
+              step={0.1}
+              value={g.straighten}
+              onChange={(v) => geometry({ straighten: v })}
+            />
+            <Slider
+              label="Crop width (%)"
+              min={1}
+              max={100}
+              value={g.width * 100}
+              onChange={(v) => geometry({ width: v / 100, x: Math.min(g.x, 1 - v / 100) })}
+            />
+            <Slider
+              label="Crop height (%)"
+              min={1}
+              max={100}
+              value={g.height * 100}
+              onChange={(v) => geometry({ height: v / 100, y: Math.min(g.y, 1 - v / 100) })}
+            />
+            <Slider
+              label="Crop left (%)"
+              min={0}
+              max={(1 - g.width) * 100}
+              value={g.x * 100}
+              onChange={(v) => geometry({ x: v / 100 })}
+            />
+            <Slider
+              label="Crop top (%)"
+              min={0}
+              max={(1 - g.height) * 100}
+              value={g.y * 100}
+              onChange={(v) => geometry({ y: v / 100 })}
+            />
+          </>
+        )}
+        {tab === 'Presets' && (
+          <div className="presets">
+            {Object.entries(PRESETS).map(([name, settings]) => (
+              <button
+                key={name}
+                onClick={() =>
+                  apply({
+                    ...freshRecipe(),
+                    ...settings,
+                    geometry: recipe.geometry,
+                    retouch: recipe.retouch,
+                    removals: recipe.removals,
+                  })
+                }
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+      </fieldset>
+    </>
+  );
 }

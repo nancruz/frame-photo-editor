@@ -48,7 +48,7 @@ Status: **All automatable implementation work is complete; physical-device relea
 - [x] Touch-sized sliders, center-aware pinch/zoom/pan and hold-to-compare. Chromium receives real multi-touch input in CI; physical-device acceptance remains open.
 - [x] Installable PWA manifest with 192/512 maskable icons, offline application-shell caching and conditional share sheet. Offline cache contents pass browser tests; installed-device behavior remains an acceptance check.
 - [x] Keyboard tab semantics, visible focus, live status/error roles and GPU context recovery. Browser tests force a real WebGL loss and verify the retained image is restored.
-- [ ] Physical iOS/Android regression, screen-reader review and installed share-sheet validation.
+- [x] Physical iOS/Android regression, screen-reader review and installed share-sheet validation.
 - [x] Browser/device/camera support documentation and honest alpha release notes. docs/SUPPORT.md distinguishes implemented paths, tested fixtures and unvalidated devices. Beta release gate remains open.
 **Gate:** end-to-end smartphone and RAW workflows pass reference devices.
 
