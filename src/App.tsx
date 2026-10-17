@@ -1,7 +1,21 @@
 import { exportPreset, importPreset } from './io/presets';
 import { geometryTransform } from './domain/geometry';
 import { useEffect, useRef, useState } from 'react';
-import { Upload, Download, Undo2, Redo2, RotateCcw, ImagePlus, Eye, FileJson } from 'lucide-react';
+import {
+  Upload,
+  Download,
+  Undo2,
+  Redo2,
+  RotateCcw,
+  ImagePlus,
+  Eye,
+  FileJson,
+  ShieldCheck,
+  SlidersHorizontal,
+  ChevronDown,
+  Scan,
+  Sparkles,
+} from 'lucide-react';
 import { isLinear, linearPreview, closeSource, type PhotoSource } from './io/source';
 import { PreviewRenderer } from './engine/preview';
 import { decodePhoto, previewBitmap } from './io/decoder';
@@ -34,7 +48,8 @@ export default function App() {
     [busy, setBusy] = useState(false),
     [progress, setProgress] = useState(''),
     [compare, setCompare] = useState(false),
-    [collapsed, setCollapsed] = useState(false);
+    [collapsed, setCollapsed] = useState(false),
+    [dragging, setDragging] = useState(false);
   const [settings, setSettings] = useState<ExportSettings>({
       type: 'image/jpeg',
       quality: 0.92,
@@ -316,7 +331,13 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-icon">◈</span> frame <span className="beta">ALPHA</span>
+          <span className="brand-icon">
+            <Scan size={25} strokeWidth={1.6} />
+          </span>{' '}
+          frame <span className="beta">PHOTO STUDIO</span>
+        </div>
+        <div className="session-label">
+          {photo ? photo.name : 'A little space for your next great photo'}
         </div>
         <div className="actions">
           <button
@@ -333,7 +354,11 @@ export default function App() {
           <button onClick={redo} disabled={!future.length || busy} aria-label="Redo">
             <Redo2 size={18} />
           </button>
-          <button onClick={() => fileInput.current?.click()} disabled={busy}>
+          <button
+            aria-label="Open photo"
+            onClick={() => fileInput.current?.click()}
+            disabled={busy}
+          >
             <Upload size={17} />
             <span className="desktop-label">Open</span>
           </button>
@@ -349,14 +374,34 @@ export default function App() {
       </header>
       <main className="workspace">
         <section
-          className="photo-area"
+          className={`photo-area ${dragging ? 'dragging' : ''}`}
           aria-label="Photo preview"
-          onDragOver={(e) => e.preventDefault()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false);
+          }}
           onDrop={(e) => {
             e.preventDefault();
+            setDragging(false);
             void openFile(e.dataTransfer.files[0]);
           }}
         >
+          <div className="canvas-heading">
+            <span>
+              <span className="status-dot" />
+              {photo ? 'YOUR WORKSPACE' : 'MAKE ROOM FOR CREATIVITY'}
+            </span>
+            <span>{photo ? 'Non-destructive editing' : 'LOCAL FIRST. ALWAYS.'}</span>
+          </div>
+          {dragging && (
+            <div className="drop-overlay">
+              <ImagePlus size={36} />
+              <strong>Drop your photo here</strong>
+            </div>
+          )}
           <div
             className="image-stage"
             style={{ display: photo ? 'flex' : 'none' }}
@@ -485,11 +530,39 @@ export default function App() {
             </>
           ) : (
             <div className="empty">
-              <div className="empty-icon">
-                <ImagePlus size={36} />
+              <div className="welcome-art" aria-hidden="true">
+                <div className="art-back" />
+                <div className="art-print">
+                  <svg viewBox="0 0 300 220" fill="none">
+                    <defs>
+                      <linearGradient id="sky" x2="0" y2="1">
+                        <stop stopColor="#c5d8d3" />
+                        <stop offset="1" stopColor="#e5e9d8" />
+                      </linearGradient>
+                      <linearGradient id="hill" x2="1" y2="1">
+                        <stop stopColor="#688980" />
+                        <stop offset="1" stopColor="#304e48" />
+                      </linearGradient>
+                    </defs>
+                    <path fill="url(#sky)" d="M0 0h300v220H0z" />
+                    <circle cx="220" cy="58" r="25" fill="#fbefd0" />
+                    <path d="M0 145 82 52 179 168 239 97 300 158V220H0Z" fill="#91aaa0" />
+                    <path d="m82 52-27 51 29-13 28 23Z" fill="#e4e8dc" />
+                    <path d="M0 171c66-57 102-43 154-6s95 8 146-26v81H0Z" fill="url(#hill)" />
+                    <path d="M0 211c74-32 155-18 198-4s73 8 102-1v14H0Z" fill="#253f39" />
+                  </svg>
+                  <span>A fresh perspective.</span>
+                </div>
+                <span className="art-spark">
+                  <Sparkles size={23} strokeWidth={1.4} />
+                </span>
               </div>
+              <div className="eyebrow">YOUR EVERYDAY PHOTO STUDIO</div>
               <h1>Your photos, your vision.</h1>
-              <p>A private space to bring your photos to life. Your images stay on your device.</p>
+              <p>
+                Find the light. Set the mood. Make it yours. A thoughtful set of tools, right in
+                your browser.
+              </p>
               <button
                 className="primary hero"
                 disabled={busy}
@@ -498,15 +571,28 @@ export default function App() {
                 <Upload size={18} />
                 Open a photo
               </button>
-              <small>JPEG · PNG · WebP · HEIC · RAW*</small>
-              <p className="hint">*HEIC and camera RAW support is experimental.</p>
+              <span className="drop-hint">or drag and drop an image here</span>
+              <small>
+                JPEG · PNG · WebP <span> / HEIC · RAW*</span>
+              </small>
+              <p className="hint">*Experimental format support</p>
+            </div>
+          )}
+          {!photo && (
+            <div className="privacy-note">
+              <ShieldCheck size={15} />
+              <span>Just you and your photos. Everything stays on your device.</span>
             </div>
           )}
         </section>
         <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
           <div className="panel-title">
             <button aria-expanded={!collapsed} onClick={() => setCollapsed(!collapsed)}>
-              Adjustments {collapsed ? '↑' : '↓'}
+              <SlidersHorizontal size={16} /> Adjustments{' '}
+              <ChevronDown
+                size={14}
+                style={{ transform: collapsed ? 'rotate(-90deg)' : undefined }}
+              />
             </button>
             <button
               onClick={() => {
@@ -523,10 +609,18 @@ export default function App() {
             </button>
           </div>
           <div className="panel-scroll">
+            {!photo && (
+              <div className="panel-intro">
+                <span className="eyebrow">THE FINISHING TOUCHES</span>
+                <p>A good photo is just the beginning.</p>
+                <span>Open an image to start exploring.</span>
+              </div>
+            )}
             <div className="tool-content removal-tool">
               <button
                 disabled={!photo || busy}
                 aria-pressed={erase}
+                aria-label={erase ? 'Done cloning' : 'Clone brush'}
                 onClick={() => {
                   endPaint();
                   setErase(!erase);
@@ -534,6 +628,7 @@ export default function App() {
                   setBrushCursor(null);
                 }}
               >
+                <ImagePlus size={15} />
                 {erase ? 'Done cloning' : 'Clone brush'}
               </button>
               {erase && (
@@ -596,6 +691,7 @@ export default function App() {
                 height={photo?.height ?? 1}
               />
             )}
+            <div className="library-heading">PRESETS & FILES</div>
             <div className="recipe-buttons">
               <button disabled={busy} onClick={() => recipeInput.current?.click()}>
                 Import preset
@@ -677,10 +773,12 @@ export default function App() {
       </main>
       <dialog
         ref={dialog}
+        aria-label="Export photo"
         onCancel={(e) => {
           if (busy) e.preventDefault();
         }}
       >
+        <span className="eyebrow">READY WHEN YOU ARE</span>
         <h2>Export photo</h2>
         {busy && (
           <p role="status">

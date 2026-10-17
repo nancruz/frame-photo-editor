@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Sun, Palette, Blend, Spline, Sparkles, Crop, Layers } from 'lucide-react';
+const TOOL_ICONS = [Sun, Palette, Blend, Spline, Sparkles, Crop, Layers];
 import { Slider } from './Slider';
 import { useEditor } from '../domain/store';
 import {
@@ -81,6 +83,10 @@ export function Controls({
             onKeyDown={(e) => tabKey(e, i)}
             onClick={() => setTab(t)}
           >
+            {(() => {
+              const Icon = TOOL_ICONS[i];
+              return <Icon size={15} strokeWidth={1.7} />;
+            })()}
             {t}
           </button>
         ))}
@@ -92,6 +98,24 @@ export function Controls({
         disabled={disabled}
         className="tool-content"
       >
+        <div className="tool-heading">
+          <h2>{tab === 'Light' ? 'Light & tone' : tab === 'Color' ? 'Color & mood' : tab}</h2>
+          <p>
+            {
+              (
+                {
+                  Light: 'Give every detail its moment.',
+                  Color: 'Find the right balance for your story.',
+                  HSL: 'Fine-tune one color at a time.',
+                  Curve: 'Shape the light, from shadows to highlights.',
+                  Effects: 'A subtle touch goes a long way.',
+                  Crop: 'A new perspective starts with the frame.',
+                  Presets: 'A starting point for your own style.',
+                } as Record<string, string>
+              )[tab]
+            }
+          </p>
+        </div>
         {(tab === 'Light' || tab === 'Color') &&
           keys.map((key) => (
             <Slider
